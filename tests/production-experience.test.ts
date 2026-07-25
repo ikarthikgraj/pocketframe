@@ -26,8 +26,8 @@ test("next action and blockers explain real workflow dependencies", () => {
   const planning = base({ project: { status: "BIBLE_READY", productionBible: {}, voiceBible: {}, createdAt: "2026-01-01T08:00:00.000Z", updatedAt: "2026-01-01T09:00:00.000Z" } });
   assert.equal(nextRecommendedAction(planning).title, "Review the Production Bible");
   const voiceIncomplete = base({ audioVersions: { one: [], two: [] } });
-  assert.match(blockedStageExplanation("Shots", deriveMilestones(voiceIncomplete)) ?? "", /Approve narration/);
-  assert.match(blockedStageExplanation("Final Cut", deriveMilestones(planning)) ?? "", /Approve one shot/);
+  assert.match(blockedStageExplanation("Clips", deriveMilestones(voiceIncomplete)) ?? "", /Approve voice narration/);
+  assert.match(blockedStageExplanation("Final Cut", deriveMilestones(planning)) ?? "", /Approve one clip/);
 });
 
 test("team status and activity timeline are derived from persisted records", () => {

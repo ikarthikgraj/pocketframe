@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { ZodError } from "zod";
 import { repositories } from "@/lib/db";
 import { analyzeProjectSchema } from "@/lib/domain/contracts";
 import { storyPlanner } from "@/lib/planning/planner";
@@ -23,6 +24,10 @@ export async function POST(request: Request, { params }: Context) {
     return NextResponse.json({ projectId, status: updated?.status, productionBible: plan.productionBible, voiceBible: plan.voiceBible, scenes: repositories().listScenes(projectId) });
   } catch (error) {
     const reconstruction = error instanceof SynopsisReconstructionError;
-    return NextResponse.json({ error: { code: reconstruction ? error.code : "PLANNING_ERROR", message: error instanceof Error ? error.message : "Could not analyze this project." } }, { status: 422 });
+    const zodValidation = error instanceof ZodError;
+    const message = reconstruction ? error.message : zodValidation ? "The synopsis could not be processed into a valid production plan. Try shortening or simplifying the synopsis." : error instanceof Error ? error.message : "Could not analyze this project.";
+    const code = reconstruction ? error.code : zodValidation ? "VALIDATION_ERROR" : "PLANNING_ERROR";
+    return NextResponse.json({ error: { code, message } }, { status: 422 });
   }
 }
+

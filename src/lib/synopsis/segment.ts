@@ -8,7 +8,7 @@ function unitsFor(text: string, count: number): string[] {
   return text.match(/\S+\s*|\s+/g) ?? [text];
 }
 
-export function segmentSynopsis(synopsis: string, maxScenes = 6): string[] {
+export function segmentSynopsis(synopsis: string, maxScenes = 4): string[] {
   const source = normalizeSynopsis(synopsis);
   if (!source) throw new Error("A synopsis is required for segmentation.");
   const words = source.split(" ").length;
@@ -29,5 +29,12 @@ export function segmentSynopsis(synopsis: string, maxScenes = 6): string[] {
     current += units[index];
   }
   if (current) scenes.push(current);
+
+  // Guard: merge any overflow segments into the last one so we never exceed maxScenes.
+  while (scenes.length > maxScenes) {
+    const overflow = scenes.pop()!;
+    scenes[scenes.length - 1] += overflow;
+  }
+
   return scenes;
 }

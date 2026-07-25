@@ -38,8 +38,8 @@ export const productionBibleSchema = z.object({
   characters: z.array(z.object({ name: z.string().trim().min(1), description: groundedTextSchema })).min(1),
   environments: z.array(z.object({ name: z.string().trim().min(1), description: groundedTextSchema })).min(1),
   themes: z.array(groundedTextSchema).min(1),
-  trailerDurationSeconds: z.number().int().min(20).max(90),
-  sceneCount: z.number().int().min(1).max(6),
+  trailerDurationSeconds: z.number().int().min(25).max(45),
+  sceneCount: z.number().int().min(1).max(5),
 });
 
 export const voiceBibleSchema = z.object({
@@ -73,7 +73,7 @@ export const plannedSceneSchema = z.object({
 });
 
 export const analyzeProjectSchema = z.object({
-  maxScenes: z.number().int().min(1).max(6).optional().default(6),
+  maxScenes: z.number().int().min(1).max(5).optional().default(4),
 });
 
 export const generateTtsSchema = z.object({

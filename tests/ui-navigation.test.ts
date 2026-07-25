@@ -6,10 +6,10 @@ import { WORKFLOW_TABS, nextWorkflowTab } from "../src/lib/workflow";
 import { GENRES, LANGUAGES } from "../src/components/project-form";
 
 test("workflow tabs follow Story, Voice, Shots, Final Cut", () => {
-  assert.deepEqual(WORKFLOW_TABS, ["Story", "Voice", "Shots", "Final Cut"]);
+  assert.deepEqual(WORKFLOW_TABS, ["Story", "Voice", "Clips", "Final Cut"]);
   assert.equal(nextWorkflowTab({ storyReady: false, voiceReady: false, shotsReady: false }), "Story");
   assert.equal(nextWorkflowTab({ storyReady: true, voiceReady: false, shotsReady: false }), "Voice");
-  assert.equal(nextWorkflowTab({ storyReady: true, voiceReady: true, shotsReady: false }), "Shots");
+  assert.equal(nextWorkflowTab({ storyReady: true, voiceReady: true, shotsReady: false }), "Clips");
   assert.equal(nextWorkflowTab({ storyReady: true, voiceReady: true, shotsReady: true }), "Final Cut");
 });
 

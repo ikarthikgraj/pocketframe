@@ -21,7 +21,7 @@ export class MockStoryPlanner implements StoryPlanner {
       characters: [{ name: protagonist, description: { text: "Primary figure referenced in the official synopsis.", groundedness: "FROM_SYNOPSIS" } }],
       environments: [{ name: "Primary story setting", description: { text: "A setting inferred only from the official synopsis.", groundedness: "AI_INFERRED" } }],
       themes: [{ text: "Choice under pressure.", groundedness: "AI_INFERRED" }],
-      trailerDurationSeconds: Math.max(25, exactSegments.length * 8),
+      trailerDurationSeconds: Math.min(40, Math.max(30, exactSegments.length * 8)),
       sceneCount: exactSegments.length,
     });
     const voiceBible = voiceBibleSchema.parse({
