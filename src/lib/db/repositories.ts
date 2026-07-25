@@ -6,7 +6,7 @@ import { narrationScriptHash } from "@/lib/narration";
 
 type ProjectRow = {
   id: string; title: string; synopsis: string; genre: string; language_code: string;
-  status: ProjectStatus; default_video_duration_seconds: number | null; references_json: string | null; story_bible_json: string | null; visual_bible_json: string | null; voice_bible_json: string | null; created_at: string; updated_at: string;
+  status: ProjectStatus; references_json: string | null; story_bible_json: string | null; visual_bible_json: string | null; voice_bible_json: string | null; created_at: string; updated_at: string;
 };
 type SceneRow = {
   id: string; project_id: string; scene_number: number; exact_text: string; status: SceneStatus;
@@ -18,14 +18,14 @@ type SceneRow = {
 type AudioVersionRow = { id: string; scene_id: string; version_number: number; provider: string; model: string; audio_path: string; duration_ms: number; status: "READY" | "SELECTED" | "APPROVED" | "REJECTED"; created_at: string; approved_at: string | null; script_hash: string | null; narration_revision: number | null; selected_at: string | null };
 type VersionRow = {
   id: string; scene_id: string; version_number: number; provider: string; status: VersionStatus;
-  prompt: string | null; negative_prompt: string | null; provider_job_id: string | null; video_path: string | null; duration_ms: number | null; error_message: string | null; video_model: string | null; approved_at: string | null; created_at: string; updated_at: string;
+  prompt: string | null; negative_prompt: string | null; provider_job_id: string | null; video_path: string | null; duration_ms: number | null; error_message: string | null; video_model: string | null; created_at: string; updated_at: string;
 };
 
 export type ProjectReference = { id: string; projectId: string; displayName: string; type: ProjectReferenceType; localPath: string; description: string | null; uploadedAt: string; source: "user-uploaded"; active: boolean };
-export type Project = { id: string; title: string; synopsis: string; genre: string; languageCode: string; defaultVideoDurationSeconds?: number; status: ProjectStatus; references: ProjectReference[]; productionBible: ProductionBible | null; voiceBible: VoiceBible | null; createdAt: string; updatedAt: string };
+export type Project = { id: string; title: string; synopsis: string; genre: string; languageCode: string; status: ProjectStatus; references: ProjectReference[]; productionBible: ProductionBible | null; voiceBible: VoiceBible | null; createdAt: string; updatedAt: string };
 export type ProjectListItem = Pick<Project, "id" | "title" | "genre" | "languageCode" | "status" | "updatedAt"> & { approvedScenes: number; totalScenes: number };
 export type Scene = { id: string; projectId: string; sceneNumber: number; exactText: string; originalNarrationText: string; currentNarrationText: string; narrationRevision: number; narrationUpdatedAt: string | null; narrationScriptHash: string; selectedAudioVersionId: string | null; status: SceneStatus; emotion: string | null; mood: string | null; cameraIntent: string | null; estimatedDurationSeconds: number | null; promptNotes: string | null; intensity: number | null; pace: string | null; energy: string | null; endingStyle: string | null; deliveryPrompt: string | null; ttsPath: string | null; ttsDurationMs: number | null; targetVideoDurationMs: number | null; videoDurationSeconds: number | null; selectedReferenceIds: string[]; approvedVersionId: string | null; negativePrompt: string | null; createdAt: string; updatedAt: string };
-export type SceneVersion = { id: string; sceneId: string; versionNumber: number; provider: string; model: string | null; status: VersionStatus; prompt: string | null; negativePrompt: string | null; providerJobId: string | null; videoPath: string | null; durationMs: number | null; errorMessage: string | null; approvedAt: string | null; createdAt: string; updatedAt: string };
+export type SceneVersion = { id: string; sceneId: string; versionNumber: number; provider: string; model: string | null; status: VersionStatus; prompt: string | null; negativePrompt: string | null; providerJobId: string | null; videoPath: string | null; durationMs: number | null; errorMessage: string | null; createdAt: string; updatedAt: string };
 export type AudioVersion = { id: string; sceneId: string; versionNumber: number; provider: string; model: string; audioPath: string; durationMs: number; status: "READY" | "SELECTED" | "APPROVED" | "REJECTED"; scriptHash: string; narrationRevision: number; selectedAt: string | null; createdAt: string; approvedAt: string | null };
 export type RenderStatus = "NOT_READY" | "READY" | "RENDERING" | "COMPLETE" | "FAILED";
 export type RenderVersion = { id: string; projectId: string; versionNumber: number; status: RenderStatus; currentStage: number | null; startedAt: string | null; completedAt: string | null; outputPath: string | null; durationMs: number | null; errorMessage: string | null; musicPath: string | null; createdAt: string };
@@ -33,23 +33,23 @@ type RenderRow = { id: string; project_id: string; version_number: number; statu
 
 const parseReferences = (value: string | null, projectId: string): ProjectReference[] => { try { const parsed = JSON.parse(value ?? "[]"); return Array.isArray(parsed) ? parsed.filter((reference): reference is ProjectReference => Boolean(reference?.id && reference?.displayName && reference?.localPath)).map((reference) => ({ ...reference, projectId, source: "user-uploaded", active: reference.active !== false })) : []; } catch { return []; } };
 const parseReferenceIds = (value: string | null) => { try { const parsed = JSON.parse(value ?? "[]"); return Array.isArray(parsed) ? parsed.filter((id): id is string => typeof id === "string") : []; } catch { return []; } };
-const projectFromRow = (row: ProjectRow): Project => ({ id: row.id, title: row.title, synopsis: row.synopsis, genre: row.genre, languageCode: row.language_code, defaultVideoDurationSeconds: normalizeVideoDuration(row.default_video_duration_seconds ?? 8), status: row.status, references: parseReferences(row.references_json, row.id), productionBible: row.story_bible_json ? JSON.parse(row.story_bible_json) as ProductionBible : null, voiceBible: row.voice_bible_json ? JSON.parse(row.voice_bible_json) as VoiceBible : null, createdAt: row.created_at, updatedAt: row.updated_at });
+const projectFromRow = (row: ProjectRow): Project => ({ id: row.id, title: row.title, synopsis: row.synopsis, genre: row.genre, languageCode: row.language_code, status: row.status, references: parseReferences(row.references_json, row.id), productionBible: row.story_bible_json ? JSON.parse(row.story_bible_json) as ProductionBible : null, voiceBible: row.voice_bible_json ? JSON.parse(row.voice_bible_json) as VoiceBible : null, createdAt: row.created_at, updatedAt: row.updated_at });
 const sceneFromRow = (row: SceneRow): Scene => {
   const originalNarrationText = row.original_narration_text ?? row.exact_text;
   const currentNarrationText = row.current_narration_text ?? originalNarrationText;
   return { id: row.id, projectId: row.project_id, sceneNumber: row.scene_number, exactText: row.exact_text, originalNarrationText, currentNarrationText, narrationRevision: row.narration_revision ?? 0, narrationUpdatedAt: row.narration_updated_at, narrationScriptHash: row.narration_script_hash ?? narrationScriptHash(currentNarrationText), selectedAudioVersionId: row.selected_audio_version_id, status: row.status, emotion: row.emotion, mood: row.mood, cameraIntent: row.camera_intent, estimatedDurationSeconds: row.estimated_duration_seconds, promptNotes: row.prompt_notes, intensity: row.intensity, pace: row.pace, energy: row.energy, endingStyle: row.ending_style, deliveryPrompt: row.delivery_prompt, ttsPath: (row as SceneRow & { tts_path: string | null }).tts_path, ttsDurationMs: (row as SceneRow & { tts_duration_ms: number | null }).tts_duration_ms, targetVideoDurationMs: (row as SceneRow & { target_video_duration_ms: number | null }).target_video_duration_ms, videoDurationSeconds: row.video_duration_seconds === null || row.video_duration_seconds === undefined ? null : normalizeVideoDuration(row.video_duration_seconds), selectedReferenceIds: parseReferenceIds(row.selected_reference_ids_json), approvedVersionId: row.approved_version_id, negativePrompt: (row as SceneRow & { negative_prompt: string | null }).negative_prompt, createdAt: row.created_at, updatedAt: row.updated_at };
 };
-const versionFromRow = (row: VersionRow): SceneVersion => ({ id: row.id, sceneId: row.scene_id, versionNumber: row.version_number, provider: row.provider, model: row.video_model, status: row.status, prompt: row.prompt, negativePrompt: row.negative_prompt, providerJobId: row.provider_job_id, videoPath: row.video_path, durationMs: row.duration_ms, errorMessage: row.error_message, approvedAt: row.approved_at, createdAt: row.created_at, updatedAt: row.updated_at });
+const versionFromRow = (row: VersionRow): SceneVersion => ({ id: row.id, sceneId: row.scene_id, versionNumber: row.version_number, provider: row.provider, model: row.video_model, status: row.status, prompt: row.prompt, negativePrompt: row.negative_prompt, providerJobId: row.provider_job_id, videoPath: row.video_path, durationMs: row.duration_ms, errorMessage: row.error_message, createdAt: row.created_at, updatedAt: row.updated_at });
 const audioVersionFromRow = (row: AudioVersionRow): AudioVersion => ({ id: row.id, sceneId: row.scene_id, versionNumber: row.version_number, provider: row.provider, model: row.model, audioPath: row.audio_path, durationMs: row.duration_ms, status: row.status, scriptHash: row.script_hash ?? "", narrationRevision: row.narration_revision ?? 0, selectedAt: row.selected_at, createdAt: row.created_at, approvedAt: row.approved_at });
 const renderFromRow = (row: RenderRow): RenderVersion => ({ id: row.id, projectId: row.project_id, versionNumber: row.version_number, status: row.status, currentStage: row.current_stage, startedAt: row.started_at, completedAt: row.completed_at, outputPath: row.output_path, durationMs: row.duration_ms, errorMessage: row.error_message, musicPath: row.music_path, createdAt: row.created_at });
 
 export function createRepositories(database: Database.Database) {
   return {
-    createProject(input: Omit<CreateProjectInput, "defaultVideoDurationSeconds"> & { defaultVideoDurationSeconds?: number }): Project {
+    createProject(input: CreateProjectInput): Project {
       const now = new Date().toISOString();
-      const project: Project = { id: randomUUID(), ...input, defaultVideoDurationSeconds: normalizeVideoDuration(input.defaultVideoDurationSeconds ?? 8), status: "DRAFT", references: [], productionBible: null, voiceBible: null, createdAt: now, updatedAt: now };
-      database.prepare(`INSERT INTO projects (id, title, synopsis, genre, language_code, default_video_duration_seconds, status, created_at, updated_at)
-        VALUES (@id, @title, @synopsis, @genre, @languageCode, @defaultVideoDurationSeconds, @status, @createdAt, @updatedAt)`).run(project);
+      const project: Project = { id: randomUUID(), ...input, status: "DRAFT", references: [], productionBible: null, voiceBible: null, createdAt: now, updatedAt: now };
+      database.prepare(`INSERT INTO projects (id, title, synopsis, genre, language_code, status, created_at, updated_at)
+        VALUES (@id, @title, @synopsis, @genre, @languageCode, @status, @createdAt, @updatedAt)`).run(project);
       return project;
     },
     listProjects(): ProjectListItem[] {
@@ -101,17 +101,16 @@ export function createRepositories(database: Database.Database) {
     updateProject(id: string, input: UpdateProjectInput): Project | undefined {
       const existing = this.getProject(id);
       if (!existing) return undefined;
-      const updated = { ...existing, ...input, defaultVideoDurationSeconds: input.defaultVideoDurationSeconds === undefined ? existing.defaultVideoDurationSeconds ?? 8 : normalizeVideoDuration(input.defaultVideoDurationSeconds), updatedAt: new Date().toISOString() };
+      const updated = { ...existing, ...input, updatedAt: new Date().toISOString() };
       database.prepare(`UPDATE projects SET title = @title, synopsis = @synopsis, genre = @genre, language_code = @languageCode,
-        default_video_duration_seconds = @defaultVideoDurationSeconds, status = @status, updated_at = @updatedAt WHERE id = @id`).run(updated);
+        status = @status, updated_at = @updatedAt WHERE id = @id`).run(updated);
       return updated;
     },
     createScene(projectId: string, input: Pick<Scene, "sceneNumber" | "exactText">): Scene {
       const now = new Date().toISOString();
-      const project = this.getProject(projectId); if (!project) throw new Error("Project not found.");
-      const scene: Scene = { id: randomUUID(), projectId, ...input, originalNarrationText: input.exactText, currentNarrationText: input.exactText, narrationRevision: 0, narrationUpdatedAt: null, narrationScriptHash: narrationScriptHash(input.exactText), selectedAudioVersionId: null, status: "DRAFT", emotion: null, mood: null, cameraIntent: null, estimatedDurationSeconds: null, promptNotes: null, intensity: null, pace: null, energy: null, endingStyle: null, deliveryPrompt: null, ttsPath: null, ttsDurationMs: null, targetVideoDurationMs: null, videoDurationSeconds: project.defaultVideoDurationSeconds ?? 8, selectedReferenceIds: [], approvedVersionId: null, negativePrompt: null, createdAt: now, updatedAt: now };
-      database.prepare(`INSERT INTO scenes (id, project_id, scene_number, exact_text, original_narration_text, current_narration_text, narration_script_hash, video_duration_seconds, status, created_at, updated_at)
-        VALUES (@id, @projectId, @sceneNumber, @exactText, @originalNarrationText, @currentNarrationText, @narrationScriptHash, @videoDurationSeconds, @status, @createdAt, @updatedAt)`).run(scene);
+      const scene: Scene = { id: randomUUID(), projectId, ...input, originalNarrationText: input.exactText, currentNarrationText: input.exactText, narrationRevision: 0, narrationUpdatedAt: null, narrationScriptHash: narrationScriptHash(input.exactText), selectedAudioVersionId: null, status: "DRAFT", emotion: null, mood: null, cameraIntent: null, estimatedDurationSeconds: null, promptNotes: null, intensity: null, pace: null, energy: null, endingStyle: null, deliveryPrompt: null, ttsPath: null, ttsDurationMs: null, targetVideoDurationMs: null, videoDurationSeconds: null, selectedReferenceIds: [], approvedVersionId: null, negativePrompt: null, createdAt: now, updatedAt: now };
+      database.prepare(`INSERT INTO scenes (id, project_id, scene_number, exact_text, original_narration_text, current_narration_text, narration_script_hash, status, created_at, updated_at)
+        VALUES (@id, @projectId, @sceneNumber, @exactText, @originalNarrationText, @currentNarrationText, @narrationScriptHash, @status, @createdAt, @updatedAt)`).run(scene);
       return scene;
     },
     listScenes(projectId: string): Scene[] {
@@ -125,9 +124,9 @@ export function createRepositories(database: Database.Database) {
         database.prepare("DELETE FROM scenes WHERE project_id = ?").run(projectId);
         database.prepare("UPDATE projects SET story_bible_json = ?, voice_bible_json = ?, status = 'BIBLE_READY', updated_at = ? WHERE id = ?")
           .run(JSON.stringify(productionBible), JSON.stringify(voiceBible), now, projectId);
-        const insert = database.prepare(`INSERT INTO scenes (id, project_id, scene_number, exact_text, original_narration_text, current_narration_text, narration_script_hash, video_duration_seconds, status, emotion, mood, camera_intent, estimated_duration_seconds, prompt_notes, intensity, pace, energy, ending_style, delivery_prompt, created_at, updated_at)
-          VALUES (@id, @projectId, @sceneNumber, @exactText, @originalNarrationText, @currentNarrationText, @narrationScriptHash, @videoDurationSeconds, 'DRAFT', @emotion, @mood, @cameraIntent, @estimatedDurationSeconds, @promptNotes, @intensity, @pace, @energy, @endingStyle, @deliveryPrompt, @createdAt, @updatedAt)`);
-        for (const planned of scenes) insert.run({ id: randomUUID(), projectId, ...planned, originalNarrationText: planned.exactText, currentNarrationText: planned.exactText, narrationScriptHash: narrationScriptHash(planned.exactText), videoDurationSeconds: project.defaultVideoDurationSeconds ?? 8, createdAt: now, updatedAt: now });
+        const insert = database.prepare(`INSERT INTO scenes (id, project_id, scene_number, exact_text, original_narration_text, current_narration_text, narration_script_hash, status, emotion, mood, camera_intent, estimated_duration_seconds, prompt_notes, intensity, pace, energy, ending_style, delivery_prompt, created_at, updated_at)
+          VALUES (@id, @projectId, @sceneNumber, @exactText, @originalNarrationText, @currentNarrationText, @narrationScriptHash, 'DRAFT', @emotion, @mood, @cameraIntent, @estimatedDurationSeconds, @promptNotes, @intensity, @pace, @energy, @endingStyle, @deliveryPrompt, @createdAt, @updatedAt)`);
+        for (const planned of scenes) insert.run({ id: randomUUID(), projectId, ...planned, originalNarrationText: planned.exactText, currentNarrationText: planned.exactText, narrationScriptHash: narrationScriptHash(planned.exactText), createdAt: now, updatedAt: now });
       })();
       return this.getProject(projectId);
     },
@@ -233,27 +232,15 @@ export function createRepositories(database: Database.Database) {
       const latest = this.listAudioVersions(sceneId).filter((audio) => audio.scriptHash === scene.narrationScriptHash && audio.status !== "REJECTED").at(-1);
       return latest ? this.approveAudioVersion(latest.id) : undefined;
     },
-    unapproveAudioVersion(audioVersionId: string): AudioVersion | undefined {
-      const version = this.getAudioVersion(audioVersionId); if (!version || version.status !== "APPROVED") return undefined;
-      const scene = this.getScene(version.sceneId); if (!scene) return undefined;
-      const now = new Date().toISOString();
-      database.transaction(() => {
-        database.prepare("UPDATE audio_versions SET status = 'READY', approved_at = NULL, selected_at = NULL WHERE id = ?").run(audioVersionId);
-        database.prepare("UPDATE scenes SET selected_audio_version_id = NULL, status = 'TTS_READY', updated_at = ? WHERE id = ?").run(now, scene.id);
-        database.prepare("UPDATE projects SET status = 'VOICE_REVIEW', updated_at = ? WHERE id = ?").run(now, scene.projectId);
-      })();
-      return this.getAudioVersion(audioVersionId);
-    },
     createSceneVersion(input: { sceneId: string; provider: string; model?: string; prompt: string; negativePrompt: string; providerJobId?: string; videoPath?: string; durationMs?: number; status?: VersionStatus }): SceneVersion {
       const { sceneId } = input;
       const next = database.prepare("SELECT COALESCE(MAX(version_number), 0) + 1 AS version_number FROM scene_versions WHERE scene_id = ?").get(sceneId) as { version_number: number };
       const now = new Date().toISOString();
-      const version: SceneVersion = { id: randomUUID(), sceneId, versionNumber: next.version_number, provider: input.provider, model: input.model ?? null, status: input.status ?? "QUEUED", prompt: input.prompt, negativePrompt: input.negativePrompt, providerJobId: input.providerJobId ?? null, videoPath: input.videoPath ?? null, durationMs: input.durationMs ?? null, errorMessage: null, approvedAt: null, createdAt: now, updatedAt: now };
+      const version: SceneVersion = { id: randomUUID(), sceneId, versionNumber: next.version_number, provider: input.provider, model: input.model ?? null, status: input.status ?? "QUEUED", prompt: input.prompt, negativePrompt: input.negativePrompt, providerJobId: input.providerJobId ?? null, videoPath: input.videoPath ?? null, durationMs: input.durationMs ?? null, errorMessage: null, createdAt: now, updatedAt: now };
       database.transaction(() => {
-        database.prepare("UPDATE scene_versions SET status = 'READY', updated_at = ? WHERE scene_id = ? AND status = 'APPROVED'").run(now, sceneId);
-        database.prepare(`INSERT INTO scene_versions (id, scene_id, version_number, provider, video_model, provider_job_id, status, prompt, negative_prompt, video_path, duration_ms, approved_at, created_at, updated_at)
-          VALUES (@id, @sceneId, @versionNumber, @provider, @model, @providerJobId, @status, @prompt, @negativePrompt, @videoPath, @durationMs, @approvedAt, @createdAt, @updatedAt)`).run(version);
-        database.prepare("UPDATE scenes SET approved_version_id = NULL, status = ?, video_prompt = ?, negative_prompt = ?, updated_at = ? WHERE id = ?").run(version.status === "READY" ? "VIDEO_REVIEW" : "VIDEO_QUEUED", input.prompt, input.negativePrompt, now, sceneId);
+        database.prepare(`INSERT INTO scene_versions (id, scene_id, version_number, provider, video_model, provider_job_id, status, prompt, negative_prompt, video_path, duration_ms, created_at, updated_at)
+          VALUES (@id, @sceneId, @versionNumber, @provider, @model, @providerJobId, @status, @prompt, @negativePrompt, @videoPath, @durationMs, @createdAt, @updatedAt)`).run(version);
+        database.prepare("UPDATE scenes SET status = ?, video_prompt = ?, negative_prompt = ?, updated_at = ? WHERE id = ?").run(version.status === "READY" ? "VIDEO_REVIEW" : "VIDEO_QUEUED", input.prompt, input.negativePrompt, now, sceneId);
       })();
       return version;
     },
@@ -278,27 +265,15 @@ export function createRepositories(database: Database.Database) {
       return this.getSceneVersion(versionId);
     },
     approveSceneVersion(versionId: string): SceneVersion | undefined {
-      const version = this.getSceneVersion(versionId); const latest = version && this.listSceneVersions(version.sceneId).at(-1);
-      if (!version || latest?.id !== version.id || version.status !== "READY") return undefined;
+      const version = this.getSceneVersion(versionId); if (!version || (version.status !== "READY" && version.status !== "APPROVED")) return undefined;
       const now = new Date().toISOString();
       database.transaction(() => {
         database.prepare("UPDATE scene_versions SET status = 'READY', updated_at = ? WHERE scene_id = ? AND status = 'APPROVED'").run(now, version.sceneId);
-        database.prepare("UPDATE scene_versions SET status = 'APPROVED', approved_at = ?, updated_at = ? WHERE id = ?").run(now, now, versionId);
+        database.prepare("UPDATE scene_versions SET status = 'APPROVED', updated_at = ? WHERE id = ?").run(now, versionId);
         database.prepare("UPDATE scenes SET approved_version_id = ?, status = 'APPROVED', updated_at = ? WHERE id = ?").run(versionId, now, version.sceneId);
         const scene = this.getScene(version.sceneId)!;
         const remaining = database.prepare("SELECT COUNT(*) AS count FROM scenes WHERE project_id = ? AND approved_version_id IS NULL").get(scene.projectId) as { count: number };
         database.prepare("UPDATE projects SET status = ?, updated_at = ? WHERE id = ?").run(remaining.count === 0 ? "VOICE_REVIEW" : "SHOT_REVIEW", now, scene.projectId);
-      })();
-      return this.getSceneVersion(versionId);
-    },
-    unapproveSceneVersion(versionId: string): SceneVersion | undefined {
-      const version = this.getSceneVersion(versionId); if (!version || version.status !== "APPROVED") return undefined;
-      const scene = this.getScene(version.sceneId); if (!scene || scene.approvedVersionId !== version.id) return undefined;
-      const now = new Date().toISOString();
-      database.transaction(() => {
-        database.prepare("UPDATE scene_versions SET status = 'READY', updated_at = ? WHERE id = ?").run(now, versionId);
-        database.prepare("UPDATE scenes SET approved_version_id = NULL, status = 'VIDEO_REVIEW', updated_at = ? WHERE id = ?").run(now, scene.id);
-        database.prepare("UPDATE projects SET status = 'SHOT_REVIEW', updated_at = ? WHERE id = ?").run(now, scene.projectId);
       })();
       return this.getSceneVersion(versionId);
     },
@@ -315,16 +290,10 @@ export function createRepositories(database: Database.Database) {
       const scenes = this.listScenes(projectId);
       const missingSceneIds = scenes.filter((scene) => {
         const approvedAudio = this.listAudioVersions(scene.id).filter((audio) => audio.status === "APPROVED" && audio.scriptHash === scene.narrationScriptHash).length === 1;
-        const latest = this.listSceneVersions(scene.id).at(-1);
-        const approvedVideo = scene.approvedVersionId === latest?.id && latest?.status === "APPROVED";
+        const approvedVideo = this.listSceneVersions(scene.id).filter((version) => version.status === "APPROVED").length === 1;
         return !approvedAudio || !approvedVideo;
       }).map((scene) => scene.id);
       return { ready: scenes.length > 0 && missingSceneIds.length === 0, missingSceneIds, scenes };
-    },
-    deleteProject(projectId: string): Project | undefined {
-      const project = this.getProject(projectId); if (!project) return undefined;
-      database.transaction(() => database.prepare("DELETE FROM projects WHERE id = ?").run(projectId))();
-      return project;
     },
     createRenderVersion(projectId: string, musicPath?: string | null): RenderVersion {
       const next = database.prepare("SELECT COALESCE(MAX(version_number), 0) + 1 AS version_number FROM render_versions WHERE project_id = ?").get(projectId) as { version_number: number };

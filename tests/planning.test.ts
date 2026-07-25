@@ -5,6 +5,10 @@ import { productionBibleSchema } from "../src/lib/domain/contracts";
 import { runMigrations } from "../src/lib/db/migrate";
 import { createRepositories } from "../src/lib/db/repositories";
 import { MockStoryPlanner } from "../src/lib/planning/planner";
+import { getStoryPlanner } from "../src/lib/planning/planner";
+import { OpenAIStoryPlanner } from "../src/lib/planning/openai-planner";
+import { loadNarrationDirectorBrief } from "../src/lib/planning/narration-director";
+import path from "node:path";
 import { normalizeSynopsis, segmentSynopsis } from "../src/lib/synopsis/segment";
 import { SynopsisReconstructionError, validateSynopsisReconstruction } from "../src/lib/synopsis/validate";
 
@@ -34,4 +38,12 @@ test("mock scene generation persists the bible and exact scenes", async () => {
   assert.equal(scenes.map((scene) => scene.exactText).join(""), normalizeSynopsis(synopsis));
   assert.equal(scenes.at(-1)?.emotion, "Urgency");
   database.close();
+});
+
+test("OpenAI planner loads the supplied narrative-director brief and remains behind an explicit provider switch", async () => {
+  const brief = await loadNarrationDirectorBrief({ ...process.env, NARRATION_DIRECTOR_PROMPT_PATH: path.resolve(process.cwd(), "..", "narration_system.txt") });
+  assert.match(brief, /OFFICIAL CINEMATIC TRAILER NARRATION/);
+  const previous = process.env.POCKETFRAME_PLANNER_PROVIDER; process.env.POCKETFRAME_PLANNER_PROVIDER = "openai";
+  assert.equal(getStoryPlanner() instanceof OpenAIStoryPlanner, true);
+  if (previous === undefined) delete process.env.POCKETFRAME_PLANNER_PROVIDER; else process.env.POCKETFRAME_PLANNER_PROVIDER = previous;
 });

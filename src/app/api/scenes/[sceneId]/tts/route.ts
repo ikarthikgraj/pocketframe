@@ -5,7 +5,7 @@ import { generateTtsSchema } from "@/lib/domain/contracts";
 import { validateSynopsisReconstruction, SynopsisReconstructionError } from "@/lib/synopsis/validate";
 import { getConfig } from "@/lib/config";
 import { measureAudioDurationMs, targetVideoDurationMs } from "@/lib/tts/duration";
-import { getTtsProvider } from "@/lib/tts";
+import { audioExtension, getTtsProvider } from "@/lib/tts";
 import { buildPerformancePrompt } from "@/lib/tts/performance-prompt";
 
 export const runtime = "nodejs";
@@ -22,7 +22,7 @@ export async function POST(request: Request, { params }: Context) {
     validateSynopsisReconstruction(project.synopsis, repo.listScenes(project.id).map((item) => item.exactText));
     const directedScene = input.data.deliveryPrompt ? repo.updateSceneDeliveryPrompt(sceneId, input.data.deliveryPrompt)! : scene;
     const versionNumber = repo.listAudioVersions(sceneId).length + 1;
-    const relativePath = path.posix.join("projects", project.id, "audio", `scene-${String(scene.sceneNumber).padStart(2, "0")}-v${versionNumber}.wav`);
+    const relativePath = path.posix.join("projects", project.id, "audio", `scene-${String(scene.sceneNumber).padStart(2, "0")}-v${versionNumber}.${audioExtension()}`);
     const outputPath = path.join(getConfig().dataDirectory, relativePath);
     const result = await getTtsProvider().synthesize({ exactText: directedScene.currentNarrationText, performancePrompt: buildPerformancePrompt(project.voiceBible, directedScene), outputPath, languageCode: project.languageCode, quality: input.data.quality });
     const durationMs = await measureAudioDurationMs(result.audioPath);

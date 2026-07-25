@@ -30,11 +30,11 @@ test("workspace renders only the selected stage and shots use a horizontal scene
   assert.match(styles, /\.scene-selector \{ display: flex/);
 });
 
-test("Home stays free of duplicate project navigation and projects have a dedicated route", () => {
+test("landing stays free of project previews and projects have a dedicated route", () => {
   const landing = readFileSync(join(process.cwd(), "src/app/page.tsx"), "utf8");
   const projects = readFileSync(join(process.cwd(), "src/app/projects/page.tsx"), "utf8");
   assert.match(landing, /Create New Trailer/);
-  assert.doesNotMatch(landing, /My Projects/);
+  assert.match(landing, /My Projects/);
   assert.doesNotMatch(landing, /repositories\(\)\.listProjects/);
   assert.match(projects, /repositories\(\)\.listProjects/);
   assert.match(projects, /EmptyProjectsState/);

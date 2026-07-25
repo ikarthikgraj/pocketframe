@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { repositories } from "@/lib/db";
 import { getConfig } from "@/lib/config";
 import { measureAudioDurationMs, targetVideoDurationMs } from "@/lib/tts/duration";
-import { getTtsProvider } from "@/lib/tts";
+import { audioExtension, getTtsProvider } from "@/lib/tts";
 
 export const runtime = "nodejs";
 type Context = { params: Promise<{ projectId: string }> };
@@ -21,7 +21,7 @@ export async function POST(request: Request, { params }: Context) {
   try {
     const fullText = scenes.map((s) => s.exactText).join(" ");
     const versionNumber = (repo.listAudioVersions(scenes[0]!.id) ?? []).length + 1;
-    const relativePath = path.posix.join("projects", project.id, "audio", `narration-v${versionNumber}.wav`);
+    const relativePath = path.posix.join("projects", project.id, "audio", `narration-v${versionNumber}.${audioExtension()}`);
     const outputPath = path.join(getConfig().dataDirectory, relativePath);
 
     const performancePrompt = `${project.voiceBible.baselineStylePrompt || "Deliver narration with consistent tone."} ${project.voiceBible.tone}`;

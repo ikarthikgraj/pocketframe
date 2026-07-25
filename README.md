@@ -16,19 +16,25 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-## Optional Gemini TTS smoke test
+## Real OpenAI planning and ElevenLabs TTS
 
-The app uses local fixture WAV audio by default. To exercise Gemini TTS, add these server-only values to `.env.local`:
+The app defaults to local mock providers. To use the supplied narration-director brief for OpenAI planning and ElevenLabs for voice, add these server-only values to `.env.local`:
 
 ```bash
-POCKETFRAME_TTS_PROVIDER=gemini
-GEMINI_TTS_API_KEY=...
-GEMINI_TTS_MODEL=...
-GEMINI_TTS_VOICE=...
-# Optional: GEMINI_TTS_ENDPOINT=https://generativelanguage.googleapis.com/v1beta/models
+POCKETFRAME_PLANNER_PROVIDER=openai
+OPENAI_API_KEY=...
+OPENAI_TEXT_MODEL=gpt-4o-mini
+NARRATION_DIRECTOR_PROMPT_PATH=../narration_system.txt
+
+POCKETFRAME_TTS_PROVIDER=elevenlabs
+ELEVENLABS_API_KEY=...
+ELEVENLABS_VOICE_ID=...
+ELEVENLABS_MODEL=eleven_multilingual_v2
 ```
 
-Then run `npm run tts:smoke`. It writes a WAV file under `data/smoke/` and reports its ffprobe duration.
+The narrative-director file guides story analysis and performance direction. PocketFrame still validates that every spoken scene reconstructs the original normalized synopsis exactly.
+
+Run `npm run tts:smoke` to validate the configured real TTS provider. It writes audio under `data/smoke/` and reports its ffprobe duration.
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 

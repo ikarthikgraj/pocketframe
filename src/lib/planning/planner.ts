@@ -1,6 +1,7 @@
 import { plannedSceneSchema, productionBibleSchema, voiceBibleSchema, type PlannedScene, type ProductionBible, type VoiceBible } from "@/lib/domain/contracts";
 import type { Project } from "@/lib/db/repositories";
 import { validateSynopsisReconstruction } from "@/lib/synopsis/validate";
+import { OpenAIStoryPlanner } from "@/lib/planning/openai-planner";
 
 export type PlanningResult = { productionBible: ProductionBible; voiceBible: VoiceBible; scenes: PlannedScene[] };
 export interface StoryPlanner {
@@ -32,8 +33,8 @@ export class MockStoryPlanner implements StoryPlanner {
       baselineEmotion: "Restrained tension",
       pronunciationNotes: "Use clear pronunciation for names and place names from the supplied narration.",
       languageCode: project.languageCode,
-      ttsProvider: process.env.POCKETFRAME_TTS_PROVIDER === "gemini" ? "gemini" : "mock",
-      providerVoice: process.env.POCKETFRAME_TTS_PROVIDER === "gemini" ? (process.env.GEMINI_TTS_VOICE ?? "configured Gemini voice") : "default-narrator",
+      ttsProvider: process.env.POCKETFRAME_TTS_PROVIDER === "elevenlabs" ? "elevenlabs" : process.env.POCKETFRAME_TTS_PROVIDER === "gemini" ? "gemini" : "mock",
+      providerVoice: process.env.POCKETFRAME_TTS_PROVIDER === "elevenlabs" ? (process.env.ELEVENLABS_VOICE_ID ?? "swh0hLPsEaD50F02tIJJ") : process.env.POCKETFRAME_TTS_PROVIDER === "gemini" ? (process.env.GEMINI_TTS_VOICE ?? "configured Gemini voice") : "default-narrator",
       accent: "Neutral to the selected language",
       timbre: "Warm, close-miked, and grounded",
       baselineStylePrompt: "Keep the performance human, intimate, and consistent across every scene.",
@@ -56,4 +57,6 @@ export class MockStoryPlanner implements StoryPlanner {
   }
 }
 
-export const storyPlanner: StoryPlanner = new MockStoryPlanner();
+export function getStoryPlanner(): StoryPlanner {
+  return process.env.POCKETFRAME_PLANNER_PROVIDER === "openai" ? new OpenAIStoryPlanner() : new MockStoryPlanner();
+}

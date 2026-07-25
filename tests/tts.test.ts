@@ -11,6 +11,8 @@ import { MockStoryPlanner } from "../src/lib/planning/planner";
 import { segmentSynopsis, normalizeSynopsis } from "../src/lib/synopsis/segment";
 import { MockTtsProvider } from "../src/lib/tts/mock-provider";
 import { measureAudioDurationMs, targetVideoDurationMs } from "../src/lib/tts/duration";
+import { audioExtension, getTtsProvider } from "../src/lib/tts";
+import { ElevenLabsTtsProvider } from "../src/lib/tts/elevenlabs-provider";
 
 const synopsis = "Mira follows a warning from her missing brother. A storm closes the road before dawn.";
 
@@ -29,4 +31,10 @@ test("mock audio versions are append-only and approval gates project readiness",
   assert.equal(first.versionNumber, 1); assert.equal(second.versionNumber, 2); assert.equal(repo.getProject(project.id)?.status, "SHOT_GENERATION"); assert.equal(repo.approveTts(scene.id)?.status, "TTS_APPROVED"); assert.equal(repo.getProject(project.id)?.status, "VOICE_REVIEW");
   for (const remainingScene of repo.listScenes(project.id).slice(1)) { repo.createAudioVersion({ sceneId: remainingScene.id, provider: result.provider, model: result.model, audioPath: `projects/test/audio/scene-${remainingScene.sceneNumber}.wav`, durationMs }); repo.approveTts(remainingScene.id); }
   assert.equal(repo.getProject(project.id)?.status, "VOICE_REVIEW"); assert.equal(targetVideoDurationMs(durationMs), durationMs + 1_200); database.close(); fs.rmSync(directory, { recursive: true, force: true });
+});
+
+test("ElevenLabs is an explicit server-side TTS provider and writes MP3 paths", () => {
+  const previous = process.env.POCKETFRAME_TTS_PROVIDER; process.env.POCKETFRAME_TTS_PROVIDER = "elevenlabs";
+  assert.equal(getTtsProvider() instanceof ElevenLabsTtsProvider, true); assert.equal(audioExtension(), "mp3");
+  if (previous === undefined) delete process.env.POCKETFRAME_TTS_PROVIDER; else process.env.POCKETFRAME_TTS_PROVIDER = previous;
 });
