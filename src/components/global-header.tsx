@@ -7,7 +7,7 @@ type GlobalHeaderProps = {
 export function GlobalHeader({ current }: GlobalHeaderProps) {
   return (
     <header className="global-header">
-      <Link className="brand" href="/" aria-label="PocketFrame home">
+      <Link className="brand" href="/" aria-label="Go to PocketFrame home">
         <span className="brand-mark">PF</span>
         <span>PocketFrame <small>AI TRAILER STUDIO</small></span>
       </Link>

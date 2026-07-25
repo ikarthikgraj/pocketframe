@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from "react";
 import { useWorkspaceNavigation } from "@/components/workspace-navigation";
+import { GuidanceTip } from "@/components/guidance-tip";
 import type { PipelineItem, ProductionStatus, RecommendedAction } from "@/lib/production-ux";
 
 const statusClass = (status: ProductionStatus) => `stage-status ${status.toLowerCase().replace(/\s+/g, "-")}`;
@@ -101,10 +102,5 @@ export function ReadinessChecklist({ items }: { items: Array<{ label: string; co
 }
 
 export function BeginnerHint({ children }: { children: ReactNode }) {
-  return (
-    <aside className="beginner-hint">
-      <strong>Helpful context</strong>
-      <span>{children}</span>
-    </aside>
-  );
+  return <GuidanceTip>{children}</GuidanceTip>;
 }

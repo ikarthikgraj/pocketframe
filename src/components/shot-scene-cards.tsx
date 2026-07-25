@@ -6,7 +6,9 @@ import type { Scene, SceneVersion } from "@/lib/db/repositories";
 import type { ProjectReference } from "@/lib/db/repositories";
 import { BeginnerHint } from "@/components/production-experience";
 import { SceneReferenceSelector } from "@/components/scene-reference-selector";
-import { DurationSegmentedControl } from "@/components/duration-segmented-control";
+import { VideoDurationSlider } from "@/components/video-duration-slider";
+import { VideoModelSelect } from "@/components/video-model-select";
+import { type VideoModelId, videoModelLabel } from "@/lib/video/models";
 
 type Props = { projectId: string; references: ProjectReference[]; scenes: Scene[]; versions: Record<string, SceneVersion[]> };
 
@@ -25,9 +27,7 @@ export function ShotSceneCards({ projectId, references, scenes, versions }: Prop
   const [error, setError] = useState<string>();
   const [selectedSceneId, setSelectedSceneId] = useState(scenes[0]?.id);
 
-  // Creative controls state
-  const [model, setModel] = useState("Sora");
-  const [quality, setQuality] = useState("720p");
+  const [model, setModel] = useState<VideoModelId>("seedance-2-fast");
 
   const active = Object.values(versions)
     .flat()
@@ -74,7 +74,7 @@ export function ShotSceneCards({ projectId, references, scenes, versions }: Prop
 
   return (
     <section id="shots" className="voice-section fade-in">
-      <BeginnerHint>Generate silent visuals, then approve the best version. Narration is added in Final Cut.</BeginnerHint>
+      <BeginnerHint>Use only the references needed for this shot. Narration is added during Final Cut.</BeginnerHint>
 
       <div className="section-heading" style={{ marginBottom: 12 }}>
         <div>
@@ -121,8 +121,6 @@ export function ShotSceneCards({ projectId, references, scenes, versions }: Prop
         working={working === selectedScene.id || sceneVersions.some((v) => working === v.id)}
         model={model}
         setModel={setModel}
-        quality={quality}
-        setQuality={setQuality}
         projectId={projectId}
         references={references}
         onError={setError}
@@ -138,8 +136,6 @@ function StudioCanvas({
   working,
   model,
   setModel,
-  quality,
-  setQuality,
   projectId,
   references,
   onError,
@@ -148,10 +144,8 @@ function StudioCanvas({
   scene: Scene;
   versions: SceneVersion[];
   working: boolean;
-  model: string;
-  setModel: (m: string) => void;
-  quality: string;
-  setQuality: (q: string) => void;
+  model: VideoModelId;
+  setModel: (m: VideoModelId) => void;
   projectId: string;
   references: ProjectReference[];
   onError: (message: string | undefined) => void;
@@ -178,7 +172,7 @@ function StudioCanvas({
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, provider: "mock", durationSeconds: duration }),
+        body: JSON.stringify({ prompt, provider: "mock", model, durationSeconds: duration }),
       },
       scene.id
     );
@@ -230,7 +224,7 @@ function StudioCanvas({
                   className={`version-chip ${v.id === selectedVersion?.id ? "active" : ""}`}
                   onClick={() => setPrompt(v.prompt ?? defaultAutoPrompt)}
                 >
-                  v{v.versionNumber} ({label[v.status]})
+                  v{v.versionNumber} · {videoModelLabel(v.model)} ({label[v.status]})
                 </span>
               ))}
             </div>
@@ -246,36 +240,12 @@ function StudioCanvas({
             </span>
           </div>
 
-          <SceneReferenceSelector sceneId={scene.id} projectId={projectId} references={references} selectedReferenceIds={scene.selectedReferenceIds} disabled={working} onError={onError} />
-
-          {/* Settings Grid: Model, Quality, Duration */}
-          <div className="studio-settings-grid">
-            <label>
-              AI Model
-              <select value={model} onChange={(e) => setModel(e.target.value)} disabled={working}>
-                <option value="Sora">Sora Video Engine</option>
-                <option value="Kling">Kling AI 1.5</option>
-                <option value="Seedance">Seedance Studio</option>
-              </select>
-            </label>
-
-            <label>
-              Resolution / Quality
-              <select value={quality} onChange={(e) => setQuality(e.target.value)} disabled={working}>
-                <option value="480p">480p SD</option>
-                <option value="720p">720p HD</option>
-                <option value="1080p">1080p Full HD</option>
-              </select>
-            </label>
-
-          </div>
-
-          <DurationSegmentedControl value={duration} onChange={(value) => void updateDuration(value)} disabled={working} />
+          <section className="generation-settings"><div><p className="eyebrow">Generation Settings</p><h3>Generation Settings</h3></div><div className="studio-settings-grid"><VideoModelSelect value={model} onChange={setModel} disabled={working} /><VideoDurationSlider value={duration} onChange={(value) => void updateDuration(value)} disabled={working} /></div><SceneReferenceSelector sceneId={scene.id} projectId={projectId} references={references} selectedReferenceIds={scene.selectedReferenceIds} disabled={working} onError={onError} /></section>
 
           {/* Visual Prompt Editor (Auto-generated default, editable by user) */}
           <label className="studio-field">
-            Visual Prompt <span style={{ fontWeight: 400, color: "var(--brand)", fontSize: 11 }}>(Auto-generated, editable)</span>
-            <small style={{ display: "block", marginBottom: 4 }}>Visual instructions for camera motion and composition</small>
+            Visual Prompt — No Audio
+            <small style={{ display: "block", marginBottom: 4 }}>Visual instructions for camera motion and composition only.</small>
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}

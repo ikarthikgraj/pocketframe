@@ -50,6 +50,17 @@ export async function DELETE(request: Request, { params }: Context) {
   return NextResponse.json({ removedReferenceId: referenceId });
 }
 
+export async function PATCH(request: Request, { params }: Context) {
+  const projectId = (await params).projectId; const body = await request.json().catch(() => ({}));
+  const referenceId = typeof body.referenceId === "string" ? body.referenceId : "";
+  const displayName = typeof body.displayName === "string" ? body.displayName.trim() : "";
+  const type = projectReferenceTypeSchema.safeParse(body.type);
+  const description = typeof body.description === "string" && body.description.trim() ? body.description.trim() : null;
+  if (!referenceId || !displayName || displayName.length > 120 || !type.success || (description && description.length > 500)) return response("VALIDATION_ERROR", "Provide a reference name, category, and an optional description up to 500 characters.", 400);
+  const reference = repositories().updateProjectReference(projectId, referenceId, { displayName, type: type.data, description });
+  return reference ? NextResponse.json({ reference }) : response("NOT_FOUND", "Reference not found.", 404);
+}
+
 function parseForm(form: FormData | undefined): { ok: true; value: { file: File; displayName: string; type: "Character" | "Environment" | "Prop" | "Style"; description: string | null; replaceId: string | null } } | { ok: false; message: string } {
   const file = form?.get("file"); const displayName = typeof form?.get("displayName") === "string" ? String(form!.get("displayName")).trim() : "";
   const type = projectReferenceTypeSchema.safeParse(form?.get("type")); const descriptionValue = form?.get("description"); const replaceId = typeof form?.get("replaceId") === "string" ? String(form!.get("replaceId")) : null;

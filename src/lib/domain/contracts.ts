@@ -82,11 +82,14 @@ export const generateTtsSchema = z.object({
 });
 
 export const approveTtsSchema = z.object({ approved: z.literal(true) });
+export const updateNarrationScriptSchema = z.object({ narration: z.string().trim().min(1).max(10_000) });
+export const audioVersionActionSchema = z.object({ action: z.enum(["select", "approve", "reject"]) });
 
 export const generateVideoSchema = z.object({
   prompt: z.string().trim().min(1).max(8_000).optional(),
   provider: z.enum(["mock", "real"]).optional().default("mock"),
   durationSeconds: z.number().int().positive().nullable().optional(),
+  model: z.enum(["seedance-2-fast", "kling-v3-pro", "veo-3-1"]).optional().default("seedance-2-fast"),
 });
 
 export const projectReferenceTypeSchema = z.enum(["Character", "Environment", "Prop", "Style"]);

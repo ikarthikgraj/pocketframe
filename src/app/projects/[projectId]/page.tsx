@@ -8,6 +8,7 @@ import { ShotSceneCards } from "@/components/shot-scene-cards";
 import { FinalCutPanel } from "@/components/final-cut-panel";
 import { ProjectWorkspaceHeader } from "@/components/project-workspace-header";
 import { deriveMilestones, displayProjectStatus, nextRecommendedAction, overallProgress } from "@/lib/production-ux";
+import Link from "next/link";
 
 export default async function ProjectWorkspace({ params }: { params: Promise<{ projectId: string }> }) {
   const project = repositories().getProject((await params).projectId);
@@ -29,7 +30,7 @@ export default async function ProjectWorkspace({ params }: { params: Promise<{ p
   const story = <StoryPlanningSetup projectId={project.id} project={{ title: project.title, synopsis: project.synopsis, genre: project.genre, languageCode: project.languageCode, references: project.references }} productionBible={project.productionBible} scenes={scenes} status={project.status} />;
   return (
     <div className="workspace-shell">
-      <header className="app-header"><span className="brand"><span className="brand-mark">PF</span><span>PocketFrame <small>AI TRAILER STUDIO</small></span></span></header>
+      <header className="app-header"><Link className="brand" href="/" aria-label="Go to PocketFrame home"><span className="brand-mark">PF</span><span>PocketFrame <small>AI TRAILER STUDIO</small></span></Link></header>
 
       <main className="workspace-content">
         <WorkspaceTabs

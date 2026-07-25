@@ -39,7 +39,7 @@ export function StoryPlanningSetup({ projectId, project, productionBible, scenes
 
   return (
     <section id="story" className="planning">
-      <BeginnerHint>Generate a production-ready plan from your source synopsis (4 scenes, 30–40s duration).</BeginnerHint>
+      <BeginnerHint>Review the character and environment details before moving to Voice.</BeginnerHint>
 
       {error && <p className="error" role="alert" style={{ marginBottom: 16 }}>{error}</p>}
 

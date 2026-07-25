@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from "react";
 import type { WorkflowTab } from "@/lib/workflow";
 import { WorkspaceNavigationProvider } from "@/components/workspace-navigation";
+import { WorkflowTabIcon } from "@/components/workflow-tab-icon";
 
 export { WORKFLOW_TABS } from "@/lib/workflow";
 
@@ -20,6 +21,7 @@ export function WorkspaceTabs({ stages, initialTab, overview }: { stages: Stage[
         {stages.map((stage) => {
           const selected = activeStage.name === stage.name;
           const blocked = !stage.ready && stage.name !== "Story";
+          const state = selected ? "active" : blocked ? "blocked" : stage.ready ? "complete" : "pending";
           return (
             <button
               key={stage.name}
@@ -32,7 +34,7 @@ export function WorkspaceTabs({ stages, initialTab, overview }: { stages: Stage[
               title={blocked ? stage.blockedMessage : undefined}
               onClick={() => setActiveTab(stage.name)}
             >
-              {stage.ready && <span className="tab-check" aria-label="Completed">✓</span>}
+              <WorkflowTabIcon stage={stage.name} state={state} />
               {stage.name}
             </button>
           );

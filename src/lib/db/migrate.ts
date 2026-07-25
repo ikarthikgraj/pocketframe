@@ -57,6 +57,19 @@ const migrations = [
       ALTER TABLE scenes ADD COLUMN video_duration_seconds INTEGER;
       ALTER TABLE render_versions ADD COLUMN current_stage INTEGER;`,
   },
+  {
+    id: "007_narration_revisions_and_audio_review",
+    sql: `ALTER TABLE scenes ADD COLUMN original_narration_text TEXT;
+      ALTER TABLE scenes ADD COLUMN current_narration_text TEXT;
+      ALTER TABLE scenes ADD COLUMN narration_revision INTEGER NOT NULL DEFAULT 0;
+      ALTER TABLE scenes ADD COLUMN narration_updated_at TEXT;
+      ALTER TABLE scenes ADD COLUMN narration_script_hash TEXT;
+      ALTER TABLE scenes ADD COLUMN selected_audio_version_id TEXT;
+      ALTER TABLE audio_versions ADD COLUMN script_hash TEXT;
+      ALTER TABLE audio_versions ADD COLUMN narration_revision INTEGER NOT NULL DEFAULT 0;
+      ALTER TABLE audio_versions ADD COLUMN selected_at TEXT;`,
+  },
+  { id: "008_video_model_metadata", sql: "ALTER TABLE scene_versions ADD COLUMN video_model TEXT;" },
 ];
 
 export function runMigrations(database: Database.Database) {

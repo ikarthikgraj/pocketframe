@@ -24,7 +24,7 @@ export async function POST(request: Request, { params }: Context) {
     const versionNumber = repo.listAudioVersions(sceneId).length + 1;
     const relativePath = path.posix.join("projects", project.id, "audio", `scene-${String(scene.sceneNumber).padStart(2, "0")}-v${versionNumber}.wav`);
     const outputPath = path.join(getConfig().dataDirectory, relativePath);
-    const result = await getTtsProvider().synthesize({ exactText: directedScene.exactText, performancePrompt: buildPerformancePrompt(project.voiceBible, directedScene), outputPath, languageCode: project.languageCode, quality: input.data.quality });
+    const result = await getTtsProvider().synthesize({ exactText: directedScene.currentNarrationText, performancePrompt: buildPerformancePrompt(project.voiceBible, directedScene), outputPath, languageCode: project.languageCode, quality: input.data.quality });
     const durationMs = await measureAudioDurationMs(result.audioPath);
     const audioVersion = repo.createAudioVersion({ sceneId, provider: result.provider, model: result.model, audioPath: relativePath, durationMs });
     return NextResponse.json({ sceneId, audioVersion, ttsPath: relativePath, ttsDurationMs: durationMs, targetVideoDurationMs: targetVideoDurationMs(durationMs), status: "TTS_READY" });

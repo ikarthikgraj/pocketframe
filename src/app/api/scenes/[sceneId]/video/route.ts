@@ -16,6 +16,7 @@ export async function POST(request: Request, { params }: Context) {
   const repo = repositories(); const scene = repo.getScene((await params).sceneId);
   if (!scene) return NextResponse.json({ error: { code: "NOT_FOUND", message: "Scene not found." } }, { status: 404 });
   if (!projectAllowsShots(repo.getProject(scene.projectId)?.status)) return NextResponse.json({ error: { code: "BIBLE_NOT_APPROVED", message: "Approve the Production Bible before generating silent shots." } }, { status: 409 });
+  if (!repo.listAudioVersions(scene.id).some((audio) => audio.status === "APPROVED" && audio.scriptHash === scene.narrationScriptHash)) return NextResponse.json({ error: { code: "CURRENT_AUDIO_NOT_APPROVED", message: `Scene ${scene.sceneNumber} narration changed. Generate and approve a new audio version before creating a shot.` } }, { status: 409 });
   if (repo.countProviderVersions(scene.id) >= 2) return NextResponse.json({ error: { code: "VERSION_LIMIT", message: "This scene already has the maximum two provider-generated versions. Upload a replacement MP4 if needed." } }, { status: 409 });
   const project = repo.getProject(scene.projectId);
   if (!project) return NextResponse.json({ error: { code: "NOT_FOUND", message: "Project not found." } }, { status: 404 });
@@ -29,7 +30,7 @@ export async function POST(request: Request, { params }: Context) {
   catch (error) { return NextResponse.json({ error: { code: "AUDIO_IN_VISUAL_PROMPT", message: error instanceof Error ? error.message : "Visual prompt contains audio direction." } }, { status: 422 }); }
   const versionNumber = repo.listSceneVersions(persistedScene.id).length + 1;
   const relativePath = path.posix.join("projects", persistedScene.projectId, "videos", `scene-${String(persistedScene.sceneNumber).padStart(2, "0")}-v${versionNumber}-original.mp4`);
-  const version = repo.createSceneVersion({ sceneId: scene.id, provider: input.data.provider, prompt: visualPrompt, negativePrompt: silentVideoNegativePrompt, providerJobId: undefined });
+  const version = repo.createSceneVersion({ sceneId: scene.id, provider: input.data.provider, model: input.data.model, prompt: visualPrompt, negativePrompt: silentVideoNegativePrompt, providerJobId: undefined });
   try {
     // `selectedReferences` is additive runtime metadata: the existing provider submit/getStatus contract remains unchanged.
     const providerPayload = { sceneId: persistedScene.id, versionNumber: version.versionNumber, prompt: visualPrompt, negativePrompt: silentVideoNegativePrompt, targetDurationMs: sourceDurationSeconds * 1_000, outputPath: path.join(getConfig().dataDirectory, relativePath), selectedReferences };
