@@ -83,6 +83,15 @@ export const generateTtsSchema = z.object({
 
 export const approveTtsSchema = z.object({ approved: z.literal(true) });
 
+export const generateVideoSchema = z.object({
+  prompt: z.string().trim().min(1).max(8_000).optional(),
+  provider: z.enum(["mock", "real"]).optional().default("mock"),
+});
+
+export const rejectSceneVersionSchema = z.object({
+  reason: z.string().trim().min(1).max(2_000).optional(),
+});
+
 export type ProjectStatus = z.infer<typeof projectStatusSchema>;
 export type SceneStatus = z.infer<typeof sceneStatusSchema>;
 export type VersionStatus = z.infer<typeof versionStatusSchema>;

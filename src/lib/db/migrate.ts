@@ -28,6 +28,11 @@ const migrations = [
       );
       CREATE INDEX IF NOT EXISTS audio_versions_scene_id_idx ON audio_versions(scene_id);`,
   },
+  {
+    id: "004_shot_versions",
+    sql: `ALTER TABLE scenes ADD COLUMN negative_prompt TEXT;
+      ALTER TABLE scene_versions ADD COLUMN negative_prompt TEXT;`,
+  },
 ];
 
 export function runMigrations(database: Database.Database) {

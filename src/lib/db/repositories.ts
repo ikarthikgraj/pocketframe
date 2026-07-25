@@ -15,18 +15,18 @@ type SceneRow = {
 type AudioVersionRow = { id: string; scene_id: string; version_number: number; provider: string; model: string; audio_path: string; duration_ms: number; status: "READY" | "APPROVED"; created_at: string; approved_at: string | null };
 type VersionRow = {
   id: string; scene_id: string; version_number: number; provider: string; status: VersionStatus;
-  video_path: string | null; created_at: string; updated_at: string;
+  prompt: string | null; negative_prompt: string | null; provider_job_id: string | null; video_path: string | null; duration_ms: number | null; error_message: string | null; created_at: string; updated_at: string;
 };
 
 export type Project = { id: string; title: string; synopsis: string; genre: string; languageCode: string; status: ProjectStatus; productionBible: ProductionBible | null; voiceBible: VoiceBible | null; createdAt: string; updatedAt: string };
 export type ProjectListItem = Pick<Project, "id" | "title" | "status" | "updatedAt"> & { approvedScenes: number; totalScenes: number };
-export type Scene = { id: string; projectId: string; sceneNumber: number; exactText: string; status: SceneStatus; emotion: string | null; mood: string | null; cameraIntent: string | null; estimatedDurationSeconds: number | null; promptNotes: string | null; intensity: number | null; pace: string | null; energy: string | null; endingStyle: string | null; deliveryPrompt: string | null; ttsPath: string | null; ttsDurationMs: number | null; targetVideoDurationMs: number | null; approvedVersionId: string | null; createdAt: string; updatedAt: string };
-export type SceneVersion = { id: string; sceneId: string; versionNumber: number; provider: string; status: VersionStatus; videoPath: string | null; createdAt: string; updatedAt: string };
+export type Scene = { id: string; projectId: string; sceneNumber: number; exactText: string; status: SceneStatus; emotion: string | null; mood: string | null; cameraIntent: string | null; estimatedDurationSeconds: number | null; promptNotes: string | null; intensity: number | null; pace: string | null; energy: string | null; endingStyle: string | null; deliveryPrompt: string | null; ttsPath: string | null; ttsDurationMs: number | null; targetVideoDurationMs: number | null; approvedVersionId: string | null; negativePrompt: string | null; createdAt: string; updatedAt: string };
+export type SceneVersion = { id: string; sceneId: string; versionNumber: number; provider: string; status: VersionStatus; prompt: string | null; negativePrompt: string | null; providerJobId: string | null; videoPath: string | null; durationMs: number | null; errorMessage: string | null; createdAt: string; updatedAt: string };
 export type AudioVersion = { id: string; sceneId: string; versionNumber: number; provider: string; model: string; audioPath: string; durationMs: number; status: "READY" | "APPROVED"; createdAt: string; approvedAt: string | null };
 
 const projectFromRow = (row: ProjectRow): Project => ({ id: row.id, title: row.title, synopsis: row.synopsis, genre: row.genre, languageCode: row.language_code, status: row.status, productionBible: row.story_bible_json ? JSON.parse(row.story_bible_json) as ProductionBible : null, voiceBible: row.voice_bible_json ? JSON.parse(row.voice_bible_json) as VoiceBible : null, createdAt: row.created_at, updatedAt: row.updated_at });
-const sceneFromRow = (row: SceneRow): Scene => ({ id: row.id, projectId: row.project_id, sceneNumber: row.scene_number, exactText: row.exact_text, status: row.status, emotion: row.emotion, mood: row.mood, cameraIntent: row.camera_intent, estimatedDurationSeconds: row.estimated_duration_seconds, promptNotes: row.prompt_notes, intensity: row.intensity, pace: row.pace, energy: row.energy, endingStyle: row.ending_style, deliveryPrompt: row.delivery_prompt, ttsPath: (row as SceneRow & { tts_path: string | null }).tts_path, ttsDurationMs: (row as SceneRow & { tts_duration_ms: number | null }).tts_duration_ms, targetVideoDurationMs: (row as SceneRow & { target_video_duration_ms: number | null }).target_video_duration_ms, approvedVersionId: row.approved_version_id, createdAt: row.created_at, updatedAt: row.updated_at });
-const versionFromRow = (row: VersionRow): SceneVersion => ({ id: row.id, sceneId: row.scene_id, versionNumber: row.version_number, provider: row.provider, status: row.status, videoPath: row.video_path, createdAt: row.created_at, updatedAt: row.updated_at });
+const sceneFromRow = (row: SceneRow): Scene => ({ id: row.id, projectId: row.project_id, sceneNumber: row.scene_number, exactText: row.exact_text, status: row.status, emotion: row.emotion, mood: row.mood, cameraIntent: row.camera_intent, estimatedDurationSeconds: row.estimated_duration_seconds, promptNotes: row.prompt_notes, intensity: row.intensity, pace: row.pace, energy: row.energy, endingStyle: row.ending_style, deliveryPrompt: row.delivery_prompt, ttsPath: (row as SceneRow & { tts_path: string | null }).tts_path, ttsDurationMs: (row as SceneRow & { tts_duration_ms: number | null }).tts_duration_ms, targetVideoDurationMs: (row as SceneRow & { target_video_duration_ms: number | null }).target_video_duration_ms, approvedVersionId: row.approved_version_id, negativePrompt: (row as SceneRow & { negative_prompt: string | null }).negative_prompt, createdAt: row.created_at, updatedAt: row.updated_at });
+const versionFromRow = (row: VersionRow): SceneVersion => ({ id: row.id, sceneId: row.scene_id, versionNumber: row.version_number, provider: row.provider, status: row.status, prompt: row.prompt, negativePrompt: row.negative_prompt, providerJobId: row.provider_job_id, videoPath: row.video_path, durationMs: row.duration_ms, errorMessage: row.error_message, createdAt: row.created_at, updatedAt: row.updated_at });
 const audioVersionFromRow = (row: AudioVersionRow): AudioVersion => ({ id: row.id, sceneId: row.scene_id, versionNumber: row.version_number, provider: row.provider, model: row.model, audioPath: row.audio_path, durationMs: row.duration_ms, status: row.status, createdAt: row.created_at, approvedAt: row.approved_at });
 
 export function createRepositories(database: Database.Database) {
@@ -58,7 +58,7 @@ export function createRepositories(database: Database.Database) {
     },
     createScene(projectId: string, input: Pick<Scene, "sceneNumber" | "exactText">): Scene {
       const now = new Date().toISOString();
-      const scene: Scene = { id: randomUUID(), projectId, ...input, status: "DRAFT", emotion: null, mood: null, cameraIntent: null, estimatedDurationSeconds: null, promptNotes: null, intensity: null, pace: null, energy: null, endingStyle: null, deliveryPrompt: null, ttsPath: null, ttsDurationMs: null, targetVideoDurationMs: null, approvedVersionId: null, createdAt: now, updatedAt: now };
+      const scene: Scene = { id: randomUUID(), projectId, ...input, status: "DRAFT", emotion: null, mood: null, cameraIntent: null, estimatedDurationSeconds: null, promptNotes: null, intensity: null, pace: null, energy: null, endingStyle: null, deliveryPrompt: null, ttsPath: null, ttsDurationMs: null, targetVideoDurationMs: null, approvedVersionId: null, negativePrompt: null, createdAt: now, updatedAt: now };
       database.prepare(`INSERT INTO scenes (id, project_id, scene_number, exact_text, status, created_at, updated_at)
         VALUES (@id, @projectId, @sceneNumber, @exactText, @status, @createdAt, @updatedAt)`).run(scene);
       return scene;
@@ -127,16 +127,59 @@ export function createRepositories(database: Database.Database) {
       if (Number(remaining.count) === 0) database.prepare("UPDATE projects SET status = 'SHOT_GENERATION', updated_at = ? WHERE id = ?").run(now, scene.projectId);
       return this.getScene(sceneId);
     },
-    createSceneVersion(sceneId: string, provider: string): SceneVersion {
+    createSceneVersion(input: { sceneId: string; provider: string; prompt: string; negativePrompt: string; providerJobId?: string; videoPath?: string; durationMs?: number; status?: VersionStatus }): SceneVersion {
+      const { sceneId } = input;
       const next = database.prepare("SELECT COALESCE(MAX(version_number), 0) + 1 AS version_number FROM scene_versions WHERE scene_id = ?").get(sceneId) as { version_number: number };
       const now = new Date().toISOString();
-      const version: SceneVersion = { id: randomUUID(), sceneId, versionNumber: next.version_number, provider, status: "QUEUED", videoPath: null, createdAt: now, updatedAt: now };
-      database.prepare(`INSERT INTO scene_versions (id, scene_id, version_number, provider, status, created_at, updated_at)
-        VALUES (@id, @sceneId, @versionNumber, @provider, @status, @createdAt, @updatedAt)`).run(version);
+      const version: SceneVersion = { id: randomUUID(), sceneId, versionNumber: next.version_number, provider: input.provider, status: input.status ?? "QUEUED", prompt: input.prompt, negativePrompt: input.negativePrompt, providerJobId: input.providerJobId ?? null, videoPath: input.videoPath ?? null, durationMs: input.durationMs ?? null, errorMessage: null, createdAt: now, updatedAt: now };
+      database.transaction(() => {
+        database.prepare(`INSERT INTO scene_versions (id, scene_id, version_number, provider, provider_job_id, status, prompt, negative_prompt, video_path, duration_ms, created_at, updated_at)
+          VALUES (@id, @sceneId, @versionNumber, @provider, @providerJobId, @status, @prompt, @negativePrompt, @videoPath, @durationMs, @createdAt, @updatedAt)`).run(version);
+        database.prepare("UPDATE scenes SET status = ?, video_prompt = ?, negative_prompt = ?, updated_at = ? WHERE id = ?").run(version.status === "READY" ? "VIDEO_REVIEW" : "VIDEO_QUEUED", input.prompt, input.negativePrompt, now, sceneId);
+      })();
       return version;
     },
     listSceneVersions(sceneId: string): SceneVersion[] {
       return (database.prepare("SELECT * FROM scene_versions WHERE scene_id = ? ORDER BY version_number").all(sceneId) as VersionRow[]).map(versionFromRow);
+    },
+    getSceneVersion(versionId: string): SceneVersion | undefined {
+      const row = database.prepare("SELECT * FROM scene_versions WHERE id = ?").get(versionId) as VersionRow | undefined;
+      return row && versionFromRow(row);
+    },
+    countProviderVersions(sceneId: string): number {
+      return (database.prepare("SELECT COUNT(*) AS count FROM scene_versions WHERE scene_id = ? AND provider != 'manual'").get(sceneId) as { count: number }).count;
+    },
+    updateSceneVersion(versionId: string, input: Partial<Pick<SceneVersion, "status" | "providerJobId" | "videoPath" | "durationMs" | "errorMessage">>): SceneVersion | undefined {
+      const version = this.getSceneVersion(versionId); if (!version) return undefined;
+      const updated = { ...version, ...input, updatedAt: new Date().toISOString() };
+      database.transaction(() => {
+        database.prepare("UPDATE scene_versions SET status = @status, provider_job_id = @providerJobId, video_path = @videoPath, duration_ms = @durationMs, error_message = @errorMessage, updated_at = @updatedAt WHERE id = @id").run(updated);
+        if (updated.status === "READY") database.prepare("UPDATE scenes SET status = 'VIDEO_REVIEW', updated_at = ? WHERE id = ?").run(updated.updatedAt, updated.sceneId);
+        if (updated.status === "READY") database.prepare("UPDATE projects SET status = 'SHOT_REVIEW', updated_at = ? WHERE id = (SELECT project_id FROM scenes WHERE id = ?)").run(updated.updatedAt, updated.sceneId);
+      })();
+      return this.getSceneVersion(versionId);
+    },
+    approveSceneVersion(versionId: string): SceneVersion | undefined {
+      const version = this.getSceneVersion(versionId); if (!version || (version.status !== "READY" && version.status !== "APPROVED")) return undefined;
+      const now = new Date().toISOString();
+      database.transaction(() => {
+        database.prepare("UPDATE scene_versions SET status = 'READY', updated_at = ? WHERE scene_id = ? AND status = 'APPROVED'").run(now, version.sceneId);
+        database.prepare("UPDATE scene_versions SET status = 'APPROVED', updated_at = ? WHERE id = ?").run(now, versionId);
+        database.prepare("UPDATE scenes SET approved_version_id = ?, status = 'APPROVED', updated_at = ? WHERE id = ?").run(versionId, now, version.sceneId);
+        const scene = this.getScene(version.sceneId)!;
+        const remaining = database.prepare("SELECT COUNT(*) AS count FROM scenes WHERE project_id = ? AND approved_version_id IS NULL").get(scene.projectId) as { count: number };
+        database.prepare("UPDATE projects SET status = ?, updated_at = ? WHERE id = ?").run(remaining.count === 0 ? "READY_TO_RENDER" : "SHOT_REVIEW", now, scene.projectId);
+      })();
+      return this.getSceneVersion(versionId);
+    },
+    rejectSceneVersion(versionId: string, reason?: string): SceneVersion | undefined {
+      const version = this.getSceneVersion(versionId); if (!version || version.status === "APPROVED") return undefined;
+      const now = new Date().toISOString();
+      database.transaction(() => {
+        database.prepare("UPDATE scene_versions SET status = 'REJECTED', error_message = ?, updated_at = ? WHERE id = ?").run(reason ?? null, now, versionId);
+        database.prepare("UPDATE scenes SET status = 'VIDEO_REVIEW', updated_at = ? WHERE id = ?").run(now, version.sceneId);
+      })();
+      return this.getSceneVersion(versionId);
     },
   };
 }
