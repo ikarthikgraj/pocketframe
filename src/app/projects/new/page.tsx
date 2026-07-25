@@ -1,3 +1,2 @@
-import Link from "next/link";
 import { ProjectForm } from "@/components/project-form";
-export default function NewProjectPage() { return <main className="page narrow"><Link href="/">← Projects</Link><h1>Create Project</h1><p>Use the existing synopsis exactly; it will become the narration in later steps.</p><ProjectForm /></main>; }
+export default function NewProjectPage() { return <main className="creation-page"><header className="creation-header"><span className="brand"><span className="brand-mark">P</span><span>PocketFrame</span></span><span>AI Trailer Production Studio</span></header><section className="creation-intro"><p className="eyebrow">New production</p><h1>Turn a story synopsis into a cinematic trailer</h1><p>Build the story plan, approve narration, review every shot, and export the final trailer.</p></section><section className="creation-card"><ProjectForm /></section></main>; }

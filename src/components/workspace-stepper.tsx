@@ -1,2 +1,2 @@
-const steps = ["Setup", "Voice", "Shots", "Export"];
-export function WorkspaceStepper({ current = "Setup" }: { current?: string }) { return <nav className="stepper" aria-label="Production steps">{steps.map((step, index) => <span className={step === current ? "current" : ""} key={step}>{index + 1}. {step}</span>)}</nav>; }
+const steps = ["Story", "Voice", "Shots", "Final Cut"];
+export function WorkspaceStepper({ current = "Story" }: { current?: string }) { const active = steps.indexOf(current); return <nav className="stepper" aria-label="Production steps">{steps.map((step, index) => <span className={index < active ? "complete" : step === current ? "current" : ""} key={step}><i>{index < active ? "✓" : index + 1}</i>{step}</span>)}</nav>; }
