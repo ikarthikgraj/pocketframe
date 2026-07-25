@@ -87,7 +87,7 @@ export function createRepositories(database: Database.Database) {
     approveProductionBible(projectId: string): Project | undefined {
       const project = this.getProject(projectId);
       if (!project || !project.productionBible) return undefined;
-      database.prepare("UPDATE projects SET status = 'VOICE_REVIEW', updated_at = ? WHERE id = ?")
+      database.prepare("UPDATE projects SET status = 'SHOT_GENERATION', updated_at = ? WHERE id = ?")
         .run(new Date().toISOString(), projectId);
       return this.getProject(projectId);
     },
@@ -128,7 +128,10 @@ export function createRepositories(database: Database.Database) {
       })();
       const scene = this.getScene(sceneId); if (!scene) return undefined;
       const remaining = database.prepare("SELECT COUNT(*) AS count FROM scenes WHERE project_id = ? AND status != 'TTS_APPROVED'").get(scene.projectId) as { count: number };
-      if (Number(remaining.count) === 0) database.prepare("UPDATE projects SET status = 'SHOT_GENERATION', updated_at = ? WHERE id = ?").run(now, scene.projectId);
+      if (Number(remaining.count) === 0) {
+        const visualRemaining = database.prepare("SELECT COUNT(*) AS count FROM scenes WHERE project_id = ? AND approved_version_id IS NULL").get(scene.projectId) as { count: number };
+        database.prepare("UPDATE projects SET status = ?, updated_at = ? WHERE id = ?").run(visualRemaining.count === 0 ? "READY_TO_RENDER" : "VOICE_REVIEW", now, scene.projectId);
+      }
       return this.getScene(sceneId);
     },
     createSceneVersion(input: { sceneId: string; provider: string; prompt: string; negativePrompt: string; providerJobId?: string; videoPath?: string; durationMs?: number; status?: VersionStatus }): SceneVersion {
@@ -172,7 +175,7 @@ export function createRepositories(database: Database.Database) {
         database.prepare("UPDATE scenes SET approved_version_id = ?, status = 'APPROVED', updated_at = ? WHERE id = ?").run(versionId, now, version.sceneId);
         const scene = this.getScene(version.sceneId)!;
         const remaining = database.prepare("SELECT COUNT(*) AS count FROM scenes WHERE project_id = ? AND approved_version_id IS NULL").get(scene.projectId) as { count: number };
-        database.prepare("UPDATE projects SET status = ?, updated_at = ? WHERE id = ?").run(remaining.count === 0 ? "READY_TO_RENDER" : "SHOT_REVIEW", now, scene.projectId);
+        database.prepare("UPDATE projects SET status = ?, updated_at = ? WHERE id = ?").run(remaining.count === 0 ? "VOICE_REVIEW" : "SHOT_REVIEW", now, scene.projectId);
       })();
       return this.getSceneVersion(versionId);
     },
