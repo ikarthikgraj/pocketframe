@@ -8,7 +8,7 @@ import { VoiceSceneCards } from "@/components/voice-scene-cards";
 import { ShotSceneCards } from "@/components/shot-scene-cards";
 import { FinalCutPanel } from "@/components/final-cut-panel";
 import { ProjectWorkspaceOverview } from "@/components/project-workspace-overview";
-import { deriveMilestones, displayProjectStatus, nextRecommendedAction, overallProgress, productionPipeline, productionTeam } from "@/lib/production-ux";
+import { deriveMilestones, displayProjectStatus, nextRecommendedAction, overallProgress, productionPipeline } from "@/lib/production-ux";
 
 export default async function ProjectWorkspace({ params }: { params: Promise<{ projectId: string }> }) {
   const project = repositories().getProject((await params).projectId);
@@ -28,7 +28,7 @@ export default async function ProjectWorkspace({ params }: { params: Promise<{ p
 
   const initialTab = nextWorkflowTab({ storyReady, voiceReady, shotsReady });
   const story = <StoryPlanningSetup projectId={project.id} project={{ title: project.title, synopsis: project.synopsis, genre: project.genre, languageCode: project.languageCode }} productionBible={project.productionBible} scenes={scenes} status={project.status} />;
-  const duration = project.productionBible?.trailerDurationSeconds ? `${project.productionBible.trailerDurationSeconds}s trailer` : "30–40s target duration";
+  const duration = project.productionBible?.trailerDurationSeconds ? `${project.productionBible.trailerDurationSeconds}s trailer` : "30–40s target";
 
   return (
     <div className="workspace-shell">
@@ -49,14 +49,11 @@ export default async function ProjectWorkspace({ params }: { params: Promise<{ p
           overview={
             <ProjectWorkspaceOverview
               title={project.title}
-              genre={project.genre}
-              language={project.languageCode}
               trailerDuration={duration}
               progress={overallProgress(milestones)}
               stage={displayProjectStatus(project.status)}
               action={nextRecommendedAction(ux)}
               pipeline={productionPipeline(ux)}
-              roles={productionTeam(ux)}
             />
           }
           stages={[
@@ -64,19 +61,19 @@ export default async function ProjectWorkspace({ params }: { params: Promise<{ p
             {
               name: "Voice",
               ready: storyReady,
-              blockedMessage: "Complete Story Planning first. Voice direction depends on the approved production plan.",
+              blockedMessage: "Complete Story Planning first.",
               content: <VoiceSceneCards projectId={project.id} scenes={scenes} audioVersions={audioVersions} voiceBible={project.voiceBible} />,
             },
             {
               name: "Clips",
               ready: voiceReady,
-              blockedMessage: "Approve voice narration first. Visual clips are timed to approved narration.",
+              blockedMessage: "Approve voice narration first.",
               content: <ShotSceneCards scenes={scenes} versions={versions} />,
             },
             {
               name: "Final Cut",
               ready: readiness.ready,
-              blockedMessage: "Approve one clip for every scene first. Final assembly uses approved media.",
+              blockedMessage: "Approve all clips first.",
               content: <FinalCutPanel projectId={project.id} title={project.title} scenes={scenes} ready={readiness.ready} render={render} />,
             },
           ]}

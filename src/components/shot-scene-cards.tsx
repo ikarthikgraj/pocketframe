@@ -16,15 +16,13 @@ const label: Record<SceneVersion["status"], string> = {
   FAILED: "Failed",
 };
 
-const seconds = (value: number | null) => (value === null ? "—" : `${(value / 1000).toFixed(1)}s`);
-
 export function ShotSceneCards({ scenes, versions }: Props) {
   const router = useRouter();
   const [working, setWorking] = useState<string>();
   const [error, setError] = useState<string>();
   const [selectedSceneId, setSelectedSceneId] = useState(scenes[0]?.id);
 
-  // Higgsfield/OpenArt creative controls state
+  // Creative controls state
   const [model, setModel] = useState("Sora");
   const [quality, setQuality] = useState("720p");
   const [duration, setDuration] = useState(6);
@@ -74,12 +72,12 @@ export function ShotSceneCards({ scenes, versions }: Props) {
   const approvedCount = scenes.filter((scene) => scene.approvedVersionId).length;
 
   return (
-    <section id="clips" className="voice-section">
-      <BeginnerHint>Higgsfield / OpenArt AI Video Studio: Select a scene, tweak model, quality, reference image, and visual prompt, then generate & approve clips.</BeginnerHint>
+    <section id="clips" className="voice-section fade-in">
+      <BeginnerHint>AI Video Studio: Select a scene beat, tweak AI model, resolution quality, reference image, and visual prompt, then generate & approve clips.</BeginnerHint>
 
       <div className="section-heading" style={{ marginBottom: 12 }}>
         <div>
-          <p className="eyebrow">AI Video Studio (Higgsfield Canvas)</p>
+          <p className="eyebrow">AI Video Studio Canvas</p>
           <h2>Visual Clips Generator</h2>
         </div>
         <span className="status-badge status-neutral">
@@ -89,7 +87,7 @@ export function ShotSceneCards({ scenes, versions }: Props) {
 
       {error && <p className="error" role="alert" style={{ marginBottom: 16 }}>{error}</p>}
 
-      {/* Horizontal Scene selector (Higgsfield style) */}
+      {/* Horizontal Scene selector */}
       <div className="scene-selector" role="tablist" aria-label="Visual clip scenes">
         {scenes.map((scene) => {
           const isSelected = selectedScene.id === scene.id;
@@ -114,8 +112,8 @@ export function ShotSceneCards({ scenes, versions }: Props) {
         })}
       </div>
 
-      {/* Higgsfield / OpenArt Canvas */}
-      <HiggsfieldCanvas
+      {/* Studio Canvas */}
+      <StudioCanvas
         key={selectedScene.id}
         scene={selectedScene}
         versions={sceneVersions}
@@ -134,7 +132,7 @@ export function ShotSceneCards({ scenes, versions }: Props) {
   );
 }
 
-function HiggsfieldCanvas({
+function StudioCanvas({
   scene,
   versions,
   working,
@@ -162,8 +160,15 @@ function HiggsfieldCanvas({
   onAction: (url: string, init: RequestInit, id: string) => Promise<void>;
 }) {
   const selectedVersion = versions.find((v) => v.status === "APPROVED") ?? versions.at(-1);
-  const [prompt, setPrompt] = useState(selectedVersion?.prompt ?? scene.promptNotes ?? "");
-  const [negativePrompt, setNegativePrompt] = useState(selectedVersion?.negativePrompt ?? scene.negativePrompt ?? "");
+
+  // Auto-generate default visual prompt if prompt is not explicitly set
+  const defaultAutoPrompt =
+    selectedVersion?.prompt ||
+    scene.promptNotes ||
+    `Cinematic 24fps shot, ${scene.cameraIntent ?? "measured push-in"}, ${scene.emotion ? scene.emotion.toLowerCase() + " tone," : ""} visual focus on: "${scene.exactText}"`;
+
+  const [prompt, setPrompt] = useState(defaultAutoPrompt);
+  const [negativePrompt, setNegativePrompt] = useState(selectedVersion?.negativePrompt ?? scene.negativePrompt ?? "blurry, text, artifacts, low resolution, audio instructions");
   const uploadRef = useRef<HTMLInputElement>(null);
   const refImageUploadRef = useRef<HTMLInputElement>(null);
 
@@ -226,7 +231,7 @@ function HiggsfieldCanvas({
                 <span
                   key={v.id}
                   className={`version-chip ${v.id === selectedVersion?.id ? "active" : ""}`}
-                  onClick={() => setPrompt(v.prompt ?? "")}
+                  onClick={() => setPrompt(v.prompt ?? defaultAutoPrompt)}
                 >
                   v{v.versionNumber} ({label[v.status]})
                 </span>
@@ -235,7 +240,7 @@ function HiggsfieldCanvas({
           )}
         </div>
 
-        {/* Right Panel: OpenArt / Higgsfield Studio Controls */}
+        {/* Right Panel: AI Studio Controls */}
         <div className="studio-controls-column">
           <div className="controls-header">
             <h3>Scene {String(scene.sceneNumber).padStart(2, "0")} Studio Controls</h3>
@@ -244,7 +249,7 @@ function HiggsfieldCanvas({
             </span>
           </div>
 
-          {/* Reference Image Upload Area */}
+          {/* Reference Image Upload Area (Controlled Compact Thumbnail) */}
           <div className="reference-upload-card" onClick={() => refImageUploadRef.current?.click()}>
             <input
               type="file"
@@ -255,17 +260,21 @@ function HiggsfieldCanvas({
             />
             {referenceImage ? (
               <div className="ref-image-preview">
-                <img src={referenceImage} alt="Reference" />
+                <img src={referenceImage} alt="Reference Thumbnail" style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 6 }} />
+                <div style={{ flex: 1, textAlign: "left", paddingLeft: 8 }}>
+                  <strong style={{ display: "block", fontSize: 12 }}>Reference Image Attached</strong>
+                  <small style={{ color: "var(--text-secondary)", fontSize: 11 }}>Will be used for style matching</small>
+                </div>
                 <button
                   type="button"
                   className="secondary"
-                  style={{ fontSize: 11, padding: "2px 6px" }}
+                  style={{ fontSize: 11, padding: "2px 8px", minHeight: 28 }}
                   onClick={(e) => {
                     e.stopPropagation();
                     setReferenceImage(null);
                   }}
                 >
-                  Remove Ref Image
+                  Remove
                 </button>
               </div>
             ) : (
@@ -310,10 +319,10 @@ function HiggsfieldCanvas({
             </label>
           </div>
 
-          {/* Visual Prompt Editor */}
+          {/* Visual Prompt Editor (Auto-generated default, editable by user) */}
           <label className="studio-field">
-            Visual Prompt
-            <small style={{ display: "block", marginBottom: 4 }}>Visual instructions for shot composition</small>
+            Visual Prompt <span style={{ fontWeight: 400, color: "var(--brand)", fontSize: 11 }}>(Auto-generated, editable)</span>
+            <small style={{ display: "block", marginBottom: 4 }}>Visual instructions for camera motion and composition</small>
             <textarea
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
@@ -337,7 +346,8 @@ function HiggsfieldCanvas({
 
           {/* Action Toolbar */}
           <div className="studio-actions-toolbar">
-            <button onClick={generate} disabled={working}>
+            <button onClick={generate} disabled={working} className={working ? "is-working" : ""}>
+              {working ? <span className="spinner" /> : null}
               {working ? "Generating Clip…" : selectedVersion ? `Regenerate Clip (${model})` : `Generate Clip (${model})`}
             </button>
 
