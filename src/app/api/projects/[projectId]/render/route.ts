@@ -32,8 +32,8 @@ export async function POST(request: Request, { params }: Context) {
       return { sceneId: scene.id, sceneNumber: scene.sceneNumber, exactText: scene.exactText, videoPath: video.videoPath, audioPath: audio.audioPath, audioDurationMs: audio.durationMs, targetDurationMs: scene.targetVideoDurationMs ?? audio.durationMs + 1200 };
     });
     const tagline = project.productionBible?.hook.text ?? project.productionBible?.premise.text ?? project.genre;
-    const result = await stitchTrailer({ projectId, renderVersion: render.versionNumber, title: parsed.data.title ?? project.title, tagline, cta: parsed.data.cta, scenes: approved, subtitles: parsed.data.subtitles, musicPath });
-    const complete = repo.updateRenderVersion(render.id, { status: "COMPLETE", completedAt: new Date().toISOString(), outputPath: result.outputPath, durationMs: result.durationMs });
+    const result = await stitchTrailer({ projectId, renderVersion: render.versionNumber, title: parsed.data.title ?? project.title, tagline, cta: parsed.data.cta, scenes: approved, subtitles: parsed.data.subtitles, musicPath, onStage: async (currentStage) => { repo.updateRenderVersion(render.id, { currentStage }); } });
+    const complete = repo.updateRenderVersion(render.id, { status: "COMPLETE", currentStage: 8, completedAt: new Date().toISOString(), outputPath: result.outputPath, durationMs: result.durationMs });
     return NextResponse.json({ projectId, render: complete, mockFallback: result.mockFallback }, { status: 201 });
   } catch (error) {
     const failed = repo.updateRenderVersion(render.id, { status: "FAILED", completedAt: new Date().toISOString(), errorMessage: error instanceof Error ? error.message : "Render failed." });

@@ -4,7 +4,7 @@ import path from "node:path";
 import { getConfig } from "@/lib/config";
 
 export type ApprovedRenderScene = { sceneId: string; sceneNumber: number; exactText: string; videoPath: string; audioPath: string; audioDurationMs: number; targetDurationMs: number };
-export type RenderRequest = { projectId: string; renderVersion: number; title: string; tagline: string; cta: string; scenes: ApprovedRenderScene[]; subtitles: boolean; musicPath?: string | null };
+export type RenderRequest = { projectId: string; renderVersion: number; title: string; tagline: string; cta: string; scenes: ApprovedRenderScene[]; subtitles: boolean; musicPath?: string | null; onStage?: (stage: number) => void | Promise<void> };
 export type MediaProbe = { durationMs: number; videoCodec: string; audioCodec: string; width: number; height: number; fps: number; pixelFormat: string };
 
 const outputVideoFilter = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,fps=24,format=yuv420p";
@@ -55,13 +55,16 @@ export async function stitchTrailer(request: RenderRequest): Promise<{ outputPat
   const scenes = orderedScenes(request.scenes); if (!scenes.length) throw new Error("No approved scenes are available for rendering.");
   const outputPath = path.join(renderDir, `final-v${request.renderVersion}.mp4`); const normalized: string[] = [];
   try {
+    await request.onStage?.(2);
     for (const scene of scenes) {
       const output = path.join(tempDir, `scene-${String(scene.sceneNumber).padStart(2, "0")}.mp4`); const durationMs = sceneOutputDurationMs(scene); const duration = (durationMs / 1000).toFixed(3);
+      await request.onStage?.(3);
       let filter = `${outputVideoFilter},tpad=stop_mode=clone:stop_duration=${duration},trim=duration=${duration},setpts=PTS-STARTPTS`;
       if (request.subtitles) {
         const subtitle = path.join(tempDir, `scene-${String(scene.sceneNumber).padStart(2, "0")}.srt`); await fs.writeFile(subtitle, `1\n00:00:00,000 --> ${srtTimestamp(scene.audioDurationMs)}\n${escapeSrt(scene.exactText)}\n`);
         filter += `,subtitles=filename='${subtitle.replace(/\\/g, "\\\\").replace(/:/g, "\\:").replace(/'/g, "\\'")}'`;
       }
+      await request.onStage?.(4); await request.onStage?.(5);
       await run("ffmpeg", ["-y", "-i", path.join(root, scene.videoPath), "-i", path.join(root, scene.audioPath), "-filter_complex", `[0:v]${filter}[video];[1:a]apad=pad_dur=${duration}[audio]`, "-map", "[video]", "-map", "[audio]", "-t", duration, "-r", "24", "-c:v", "libx264", "-preset", "fast", "-pix_fmt", "yuv420p", "-c:a", "aac", "-movflags", "+faststart", output]);
       normalized.push(output);
     }
@@ -70,10 +73,11 @@ export async function stitchTrailer(request: RenderRequest): Promise<{ outputPat
     const manifest = path.join(tempDir, "concat.txt"); await fs.writeFile(manifest, [...normalized, titleCard].map((file) => `file '${file.replace(/'/g, "'\\''")}'`).join("\n")); const joined = path.join(tempDir, "joined.mp4");
     await run("ffmpeg", ["-y", "-f", "concat", "-safe", "0", "-i", manifest, "-c", "copy", joined]);
     const expectedDurationMs = scenes.reduce((total, scene) => total + sceneOutputDurationMs(scene), 0) + 3_000;
+    await request.onStage?.(6); await request.onStage?.(7);
     if (request.musicPath) {
       await run("ffmpeg", ["-y", "-i", joined, "-stream_loop", "-1", "-i", path.join(root, request.musicPath), "-filter_complex", `[1:a]volume=0.12,afade=t=in:st=0:d=1,afade=t=out:st=${Math.max(0, expectedDurationMs / 1000 - 1).toFixed(3)}:d=1[music];[0:a][music]amix=inputs=2:duration=first:dropout_transition=0[audio]`, "-map", "0:v", "-map", "[audio]", "-t", (expectedDurationMs / 1000).toFixed(3), "-c:v", "copy", "-c:a", "aac", "-movflags", "+faststart", outputPath]);
     } else await run("ffmpeg", ["-y", "-i", joined, "-t", (expectedDurationMs / 1000).toFixed(3), "-c:v", "libx264", "-pix_fmt", "yuv420p", "-r", "24", "-c:a", "aac", "-movflags", "+faststart", outputPath]);
-    const probe = await probeMp4(outputPath); assertTrailerFormat(probe); return { outputPath: path.relative(root, outputPath), durationMs: probe.durationMs, mockFallback: false };
+    await request.onStage?.(8); const probe = await probeMp4(outputPath); assertTrailerFormat(probe); return { outputPath: path.relative(root, outputPath), durationMs: probe.durationMs, mockFallback: false };
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
     // Safe offline fallback: preserve the approved source, never replace an existing final render.

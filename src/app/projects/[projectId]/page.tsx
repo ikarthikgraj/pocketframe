@@ -27,7 +27,7 @@ export default async function ProjectWorkspace({ params }: { params: Promise<{ p
   const shotsReady = milestones.shotsComplete;
 
   const initialTab = nextWorkflowTab({ storyReady, voiceReady, shotsReady });
-  const story = <StoryPlanningSetup projectId={project.id} project={{ title: project.title, synopsis: project.synopsis, genre: project.genre, languageCode: project.languageCode }} productionBible={project.productionBible} scenes={scenes} status={project.status} />;
+  const story = <StoryPlanningSetup projectId={project.id} project={{ title: project.title, synopsis: project.synopsis, genre: project.genre, languageCode: project.languageCode, references: project.references }} productionBible={project.productionBible} scenes={scenes} status={project.status} />;
   const duration = project.productionBible?.trailerDurationSeconds ? `${project.productionBible.trailerDurationSeconds}s trailer` : "30–40s target";
 
   return (
@@ -68,7 +68,7 @@ export default async function ProjectWorkspace({ params }: { params: Promise<{ p
               name: "Clips",
               ready: voiceReady,
               blockedMessage: "Approve voice narration first.",
-              content: <ShotSceneCards scenes={scenes} versions={versions} />,
+              content: <ShotSceneCards projectId={project.id} references={project.references} scenes={scenes} versions={versions} />,
             },
             {
               name: "Final Cut",

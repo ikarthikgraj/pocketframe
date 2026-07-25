@@ -51,6 +51,12 @@ const migrations = [
       );
       CREATE INDEX IF NOT EXISTS render_versions_project_id_idx ON render_versions(project_id);`,
   },
+  {
+    id: "006_references_duration_and_render_progress",
+    sql: `ALTER TABLE scenes ADD COLUMN selected_reference_ids_json TEXT NOT NULL DEFAULT '[]';
+      ALTER TABLE scenes ADD COLUMN video_duration_seconds INTEGER;
+      ALTER TABLE render_versions ADD COLUMN current_stage INTEGER;`,
+  },
 ];
 
 export function runMigrations(database: Database.Database) {

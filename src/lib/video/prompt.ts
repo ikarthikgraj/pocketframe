@@ -16,3 +16,22 @@ export function assertSilentVisualPrompt(prompt: string) {
 export function defaultSilentVisualPrompt(promptNotes?: string | null) {
   return assertSilentVisualPrompt(promptNotes?.trim() || "Cinematic vertical shot with one readable action, deliberate camera movement, and consistent character and environment references.");
 }
+
+export type SelectedVisualReference = { id: string; name: string; type: "Character" | "Environment" | "Prop" | "Style"; path: string; description: string | null };
+
+const referenceInstructions: Record<SelectedVisualReference["type"], string> = {
+  Character: "Use the selected character reference for facial identity, costume, body, and wardrobe continuity.",
+  Environment: "Use the selected environment reference for architecture, geography, lighting layout, and set continuity.",
+  Prop: "Use the selected prop reference for exact appearance, scale, material, and color continuity.",
+  Style: "Use the selected style reference for composition, visual treatment, and cinematography.",
+};
+
+export function stripReferenceContinuityInstructions(prompt: string) {
+  return prompt.split("\n\n").filter((block) => !Object.values(referenceInstructions).includes(block.trim())).join("\n\n").trim();
+}
+
+/** Adds continuity directions only for references explicitly selected for this scene. */
+export function composeVisualPromptWithReferences(prompt: string, selectedReferences: SelectedVisualReference[]) {
+  const instructions = [...new Set(selectedReferences.map((reference) => referenceInstructions[reference.type]))];
+  return assertSilentVisualPrompt([stripReferenceContinuityInstructions(prompt), ...instructions].filter(Boolean).join("\n\n"));
+}

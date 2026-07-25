@@ -86,7 +86,11 @@ export const approveTtsSchema = z.object({ approved: z.literal(true) });
 export const generateVideoSchema = z.object({
   prompt: z.string().trim().min(1).max(8_000).optional(),
   provider: z.enum(["mock", "real"]).optional().default("mock"),
+  durationSeconds: z.number().int().positive().nullable().optional(),
 });
+
+export const projectReferenceTypeSchema = z.enum(["Character", "Environment", "Prop", "Style"]);
+export const setSceneReferencesSchema = z.object({ referenceIds: z.array(z.string().uuid()).max(3) });
 
 export const rejectSceneVersionSchema = z.object({
   reason: z.string().trim().min(1).max(2_000).optional(),
@@ -106,3 +110,4 @@ export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
 export type ProductionBible = z.infer<typeof productionBibleSchema>;
 export type VoiceBible = z.infer<typeof voiceBibleSchema>;
 export type PlannedScene = z.infer<typeof plannedSceneSchema>;
+export type ProjectReferenceType = z.infer<typeof projectReferenceTypeSchema>;

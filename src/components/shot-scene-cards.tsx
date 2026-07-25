@@ -3,9 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Scene, SceneVersion } from "@/lib/db/repositories";
+import type { ProjectReference } from "@/lib/db/repositories";
 import { BeginnerHint } from "@/components/production-experience";
+import { SceneReferenceSelector } from "@/components/scene-reference-selector";
+import { DurationSegmentedControl } from "@/components/duration-segmented-control";
 
-type Props = { scenes: Scene[]; versions: Record<string, SceneVersion[]> };
+type Props = { projectId: string; references: ProjectReference[]; scenes: Scene[]; versions: Record<string, SceneVersion[]> };
 
 const label: Record<SceneVersion["status"], string> = {
   QUEUED: "Pending",
@@ -16,7 +19,7 @@ const label: Record<SceneVersion["status"], string> = {
   FAILED: "Failed",
 };
 
-export function ShotSceneCards({ scenes, versions }: Props) {
+export function ShotSceneCards({ projectId, references, scenes, versions }: Props) {
   const router = useRouter();
   const [working, setWorking] = useState<string>();
   const [error, setError] = useState<string>();
@@ -25,8 +28,6 @@ export function ShotSceneCards({ scenes, versions }: Props) {
   // Creative controls state
   const [model, setModel] = useState("Sora");
   const [quality, setQuality] = useState("720p");
-  const [duration, setDuration] = useState(6);
-  const [referenceImage, setReferenceImage] = useState<string | null>(null);
 
   const active = Object.values(versions)
     .flat()
@@ -122,10 +123,9 @@ export function ShotSceneCards({ scenes, versions }: Props) {
         setModel={setModel}
         quality={quality}
         setQuality={setQuality}
-        duration={duration}
-        setDuration={setDuration}
-        referenceImage={referenceImage}
-        setReferenceImage={setReferenceImage}
+        projectId={projectId}
+        references={references}
+        onError={setError}
         onAction={json}
       />
     </section>
@@ -140,10 +140,9 @@ function StudioCanvas({
   setModel,
   quality,
   setQuality,
-  duration,
-  setDuration,
-  referenceImage,
-  setReferenceImage,
+  projectId,
+  references,
+  onError,
   onAction,
 }: {
   scene: Scene;
@@ -153,10 +152,9 @@ function StudioCanvas({
   setModel: (m: string) => void;
   quality: string;
   setQuality: (q: string) => void;
-  duration: number;
-  setDuration: (d: number) => void;
-  referenceImage: string | null;
-  setReferenceImage: (img: string | null) => void;
+  projectId: string;
+  references: ProjectReference[];
+  onError: (message: string | undefined) => void;
   onAction: (url: string, init: RequestInit, id: string) => Promise<void>;
 }) {
   const selectedVersion = versions.find((v) => v.status === "APPROVED") ?? versions.at(-1);
@@ -170,7 +168,7 @@ function StudioCanvas({
   const [prompt, setPrompt] = useState(defaultAutoPrompt);
   const [negativePrompt, setNegativePrompt] = useState(selectedVersion?.negativePrompt ?? scene.negativePrompt ?? "blurry, text, artifacts, low resolution, audio instructions");
   const uploadRef = useRef<HTMLInputElement>(null);
-  const refImageUploadRef = useRef<HTMLInputElement>(null);
+  const [duration, setDuration] = useState<number | null>(scene.videoDurationSeconds);
 
   const isApproved = selectedVersion?.status === "APPROVED";
 
@@ -180,7 +178,7 @@ function StudioCanvas({
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, provider: "mock" }),
+        body: JSON.stringify({ prompt, provider: "mock", durationSeconds: duration }),
       },
       scene.id
     );
@@ -194,12 +192,11 @@ function StudioCanvas({
     if (uploadRef.current) uploadRef.current.value = "";
   };
 
-  const handleRefImageChange = (file?: File) => {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => setReferenceImage(e.target?.result as string);
-    reader.readAsDataURL(file);
-  };
+  async function updateDuration(value: number | null) {
+    setDuration(value);
+    const response = await fetch(`/api/scenes/${scene.id}/duration`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ durationSeconds: value }) });
+    if (!response.ok) { const data = await response.json().catch(() => ({})); onError(data.error?.message ?? "Could not update video duration."); }
+  }
 
   return (
     <article className={`higgsfield-studio ${isApproved ? "is-approved" : ""}`}>
@@ -213,14 +210,14 @@ function StudioCanvas({
               <div className="canvas-placeholder">
                 <span className="placeholder-icon">🎬</span>
                 <strong>Scene {String(scene.sceneNumber).padStart(2, "0")} Canvas</strong>
-                <p>Click "Generate Clip" to render with {model}</p>
+                <p>Click &ldquo;Generate Clip&rdquo; to render with {model}</p>
               </div>
             )}
           </div>
 
           <div className="scene-narration-banner" style={{ marginTop: 12, padding: "10px 14px", background: "var(--surface-muted)", borderRadius: 8 }}>
             <span className="field-label">Exact Narration Context</span>
-            <p style={{ margin: 0, fontSize: 13, color: "var(--text-primary)" }}>"{scene.exactText}"</p>
+            <p style={{ margin: 0, fontSize: 13, color: "var(--text-primary)" }}>&ldquo;{scene.exactText}&rdquo;</p>
           </div>
 
           {/* Version History Chips */}
@@ -249,41 +246,7 @@ function StudioCanvas({
             </span>
           </div>
 
-          {/* Reference Image Upload Area (Controlled Compact Thumbnail) */}
-          <div className="reference-upload-card" onClick={() => refImageUploadRef.current?.click()}>
-            <input
-              type="file"
-              ref={refImageUploadRef}
-              accept="image/*"
-              className="visually-hidden"
-              onChange={(e) => handleRefImageChange(e.target.files?.[0])}
-            />
-            {referenceImage ? (
-              <div className="ref-image-preview">
-                <img src={referenceImage} alt="Reference Thumbnail" style={{ width: 56, height: 56, objectFit: "cover", borderRadius: 6 }} />
-                <div style={{ flex: 1, textAlign: "left", paddingLeft: 8 }}>
-                  <strong style={{ display: "block", fontSize: 12 }}>Reference Image Attached</strong>
-                  <small style={{ color: "var(--text-secondary)", fontSize: 11 }}>Will be used for style matching</small>
-                </div>
-                <button
-                  type="button"
-                  className="secondary"
-                  style={{ fontSize: 11, padding: "2px 8px", minHeight: 28 }}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setReferenceImage(null);
-                  }}
-                >
-                  Remove
-                </button>
-              </div>
-            ) : (
-              <div className="ref-upload-placeholder">
-                <span>🖼️ Upload Reference Image / Style Asset</span>
-                <small>Drag & drop or click to add visual reference</small>
-              </div>
-            )}
-          </div>
+          <SceneReferenceSelector sceneId={scene.id} projectId={projectId} references={references} selectedReferenceIds={scene.selectedReferenceIds} disabled={working} onError={onError} />
 
           {/* Settings Grid: Model, Quality, Duration */}
           <div className="studio-settings-grid">
@@ -305,19 +268,9 @@ function StudioCanvas({
               </select>
             </label>
 
-            <label>
-              Duration ({duration}s)
-              <input
-                type="range"
-                min={3}
-                max={10}
-                step={1}
-                value={duration}
-                onChange={(e) => setDuration(Number(e.target.value))}
-                disabled={working}
-              />
-            </label>
           </div>
+
+          <DurationSegmentedControl value={duration} onChange={(value) => void updateDuration(value)} disabled={working} />
 
           {/* Visual Prompt Editor (Auto-generated default, editable by user) */}
           <label className="studio-field">

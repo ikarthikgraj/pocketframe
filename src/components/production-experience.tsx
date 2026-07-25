@@ -100,28 +100,6 @@ export function ReadinessChecklist({ items }: { items: Array<{ label: string; co
   );
 }
 
-export function RenderProgress({ status }: { status: "NOT_READY" | "READY" | "RENDERING" | "COMPLETE" | "FAILED" }) {
-  const finished = status === "COMPLETE";
-  const active = status === "RENDERING";
-  const steps = ["Preparing approved clips", "Matching narration durations", "Removing source clip audio", "Attaching narration", "Mixing optional music", "Encoding final trailer", "Validating MP4"];
-  return (
-    <section className="render-progress">
-      <p className="eyebrow">Render progress</p>
-      <h3>{status === "RENDERING" ? "Assembling your trailer" : status === "COMPLETE" ? "Final trailer validated" : status === "FAILED" ? "Render needs another attempt" : "Render steps"}</h3>
-      <p>{active ? "The renderer is working. Detailed FFmpeg phase progress is not reported by the current backend." : finished ? "All render steps completed." : "Render begins after every narration and shot is approved."}</p>
-      <ol>
-        {steps.map((step, index) => (
-          <li key={step} className={finished ? "complete" : active && index === 0 ? "active" : "waiting"}>
-            <span>{finished ? "✓" : active && index === 0 ? "…" : "○"}</span>
-            {step}
-          </li>
-        ))}
-      </ol>
-      {active && <span className="indeterminate-progress" aria-label="Rendering in progress" />}
-    </section>
-  );
-}
-
 export function BeginnerHint({ children }: { children: ReactNode }) {
   return (
     <aside className="beginner-hint">

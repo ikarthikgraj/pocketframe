@@ -3,7 +3,8 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { RenderVersion, Scene } from "@/lib/db/repositories";
-import { BeginnerHint, ReadinessChecklist, RenderProgress, StageStatus } from "@/components/production-experience";
+import { BeginnerHint, ReadinessChecklist, StageStatus } from "@/components/production-experience";
+import { RenderFailureState, RenderProgressChecklist, RenderSuccessSummary } from "@/components/render-progress-checklist";
 
 export function FinalCutPanel({
   projectId,
@@ -39,11 +40,11 @@ export function FinalCutPanel({
     const response = await fetch(`/api/projects/${projectId}/render`, { method: "POST", body: form });
     const data = await response.json().catch(() => ({}));
     setWorking(false);
-    if (!response.ok) setError(data.error?.message ?? "Render failed.");
+    if (!response.ok) { setError(data.error?.message ?? "Render failed."); if (data.render) router.refresh(); }
     else router.refresh();
   }
 
-  const status = render?.status ?? (ready ? "READY" : "NOT_READY");
+  const status = working ? "RENDERING" : render?.status ?? (ready ? "READY" : "NOT_READY");
 
   return (
     <section id="final-cut" className="export-gate">
@@ -112,25 +113,10 @@ export function FinalCutPanel({
           </div>
         </article>
 
-        <RenderProgress status={status} />
-
         {error && <p className="error" role="alert">{error}</p>}
-        {render?.status === "FAILED" && <p className="error" role="alert">{render.errorMessage}</p>}
-
-        {render?.status === "COMPLETE" && (
-          <div className="final-player">
-            <video controls preload="metadata" src={`/api/renders/${render.id}/video`} />
-            <div>
-              <p className="eyebrow">Trailer Master Ready</p>
-              <p>
-                Duration: {render.durationMs ? `${(render.durationMs / 1000).toFixed(1)}s` : "30–40s"} · 1080 × 1920 · H.264/AAC · Render v{render.versionNumber}
-              </p>
-              <a className="button" href={`/api/renders/${render.id}/video`} download={`pocketframe-final-v${render.versionNumber}.mp4`}>
-                Download MP4 Trailer
-              </a>
-            </div>
-          </div>
-        )}
+        {status === "RENDERING" && <RenderProgressChecklist render={render} />}
+        {render?.status === "FAILED" && !working && <RenderFailureState render={render} onRetry={() => void renderTrailer()} />}
+        {render?.status === "COMPLETE" && !working && <RenderSuccessSummary render={render} sceneCount={scenes.length} />}
       </section>
     </section>
   );

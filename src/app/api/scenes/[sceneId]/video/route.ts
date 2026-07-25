@@ -4,7 +4,8 @@ import { repositories } from "@/lib/db";
 import { generateVideoSchema } from "@/lib/domain/contracts";
 import { getConfig } from "@/lib/config";
 import { getVideoProvider } from "@/lib/video";
-import { assertSilentVisualPrompt, defaultSilentVisualPrompt, silentVideoNegativePrompt } from "@/lib/video/prompt";
+import { assertSilentVisualPrompt, composeVisualPromptWithReferences, defaultSilentVisualPrompt, silentVideoNegativePrompt, type SelectedVisualReference } from "@/lib/video/prompt";
+import { automaticVideoDuration, normalizeVideoDuration, supportedVideoDurations } from "@/lib/video/duration";
 
 export const runtime = "nodejs";
 type Context = { params: Promise<{ sceneId: string }> };
@@ -17,16 +18,24 @@ export async function POST(request: Request, { params }: Context) {
   if (!projectAllowsShots(repo.getProject(scene.projectId)?.status)) return NextResponse.json({ error: { code: "BIBLE_NOT_APPROVED", message: "Approve the Production Bible before generating silent shots." } }, { status: 409 });
   if (repo.countProviderVersions(scene.id) >= 2) return NextResponse.json({ error: { code: "VERSION_LIMIT", message: "This scene already has the maximum two provider-generated versions. Upload a replacement MP4 if needed." } }, { status: 409 });
   const project = repo.getProject(scene.projectId);
+  if (!project) return NextResponse.json({ error: { code: "NOT_FOUND", message: "Project not found." } }, { status: 404 });
+  const selectedReferences: SelectedVisualReference[] = project.references.filter((reference) => scene.selectedReferenceIds.includes(reference.id) && reference.active).map((reference) => ({ id: reference.id, name: reference.displayName, type: reference.type, path: reference.localPath, description: reference.description }));
+  const requestedDuration = input.data.durationSeconds === null ? null : input.data.durationSeconds === undefined ? scene.videoDurationSeconds : normalizeVideoDuration(input.data.durationSeconds, supportedVideoDurations);
+  if (input.data.durationSeconds !== undefined && input.data.durationSeconds !== null && requestedDuration !== input.data.durationSeconds) return NextResponse.json({ error: { code: "UNSUPPORTED_DURATION", message: `Choose one of: ${supportedVideoDurations.map((duration) => `${duration} sec`).join(", ")}.` } }, { status: 400 });
+  const persistedScene = repo.setSceneVideoDuration(scene.id, requestedDuration) ?? scene;
+  const sourceDurationSeconds = persistedScene.videoDurationSeconds ?? automaticVideoDuration(persistedScene.targetVideoDurationMs, supportedVideoDurations);
   let visualPrompt: string;
-  try { visualPrompt = input.data.prompt ? assertSilentVisualPrompt(input.data.prompt) : defaultSilentVisualPrompt(scene.promptNotes); }
+  try { visualPrompt = composeVisualPromptWithReferences(input.data.prompt ? assertSilentVisualPrompt(input.data.prompt) : defaultSilentVisualPrompt(scene.promptNotes), selectedReferences); }
   catch (error) { return NextResponse.json({ error: { code: "AUDIO_IN_VISUAL_PROMPT", message: error instanceof Error ? error.message : "Visual prompt contains audio direction." } }, { status: 422 }); }
-  const versionNumber = repo.listSceneVersions(scene.id).length + 1;
-  const relativePath = path.posix.join("projects", scene.projectId, "videos", `scene-${String(scene.sceneNumber).padStart(2, "0")}-v${versionNumber}-original.mp4`);
+  const versionNumber = repo.listSceneVersions(persistedScene.id).length + 1;
+  const relativePath = path.posix.join("projects", persistedScene.projectId, "videos", `scene-${String(persistedScene.sceneNumber).padStart(2, "0")}-v${versionNumber}-original.mp4`);
   const version = repo.createSceneVersion({ sceneId: scene.id, provider: input.data.provider, prompt: visualPrompt, negativePrompt: silentVideoNegativePrompt, providerJobId: undefined });
   try {
-    const job = await getVideoProvider(input.data.provider).submit({ sceneId: scene.id, versionNumber: version.versionNumber, prompt: visualPrompt, negativePrompt: silentVideoNegativePrompt, targetDurationMs: scene.targetVideoDurationMs ?? Math.max(2_000, (scene.estimatedDurationSeconds ?? 4) * 1_000), outputPath: path.join(getConfig().dataDirectory, relativePath) });
+    // `selectedReferences` is additive runtime metadata: the existing provider submit/getStatus contract remains unchanged.
+    const providerPayload = { sceneId: persistedScene.id, versionNumber: version.versionNumber, prompt: visualPrompt, negativePrompt: silentVideoNegativePrompt, targetDurationMs: sourceDurationSeconds * 1_000, outputPath: path.join(getConfig().dataDirectory, relativePath), selectedReferences };
+    const job = await getVideoProvider(input.data.provider).submit(providerPayload);
     const databaseVersion = repo.updateSceneVersion(version.id, { providerJobId: job.providerJobId ?? null })!;
-    return NextResponse.json({ version: databaseVersion, sourceContext: { exactNarrationText: scene.exactText }, scenePrompt: { subject: project?.productionBible?.characters ?? [], action: scene.promptNotes, environment: project?.productionBible?.environments ?? [], lighting: project?.productionBible?.visualStyle.text, cameraMovement: scene.cameraIntent, visualMood: scene.mood, duration: scene.targetVideoDurationMs, aspectRatio: "9:16", visualPrompt, negativeVisualConstraints: silentVideoNegativePrompt, providerStatus: "QUEUED" } }, { status: 201 });
+    return NextResponse.json({ version: databaseVersion, sourceContext: { exactNarrationText: persistedScene.exactText }, scenePrompt: { subject: project.productionBible?.characters ?? [], action: persistedScene.promptNotes, environment: project.productionBible?.environments ?? [], lighting: project.productionBible?.visualStyle.text, cameraMovement: persistedScene.cameraIntent, visualMood: persistedScene.mood, duration: sourceDurationSeconds * 1_000, aspectRatio: "9:16", visualPrompt, selectedReferences, negativeVisualConstraints: silentVideoNegativePrompt, providerStatus: "QUEUED" } }, { status: 201 });
   } catch (error) {
     repo.updateSceneVersion(version.id, { status: "FAILED", errorMessage: error instanceof Error ? error.message : "Video generation failed." });
     return NextResponse.json({ error: { code: "VIDEO_GENERATION_FAILED", message: error instanceof Error ? error.message : "Could not generate video." }, versionId: version.id }, { status: 502 });

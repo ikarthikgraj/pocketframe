@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import type { ProductionBible } from "@/lib/domain/contracts";
 import type { Scene } from "@/lib/db/repositories";
 import { BeginnerHint } from "@/components/production-experience";
+import { ProjectReferences } from "@/components/project-references";
+import type { ProjectReference } from "@/lib/db/repositories";
 
 type Props = {
   projectId: string;
-  project: { title: string; synopsis: string; genre: string; languageCode: string };
+  project: { title: string; synopsis: string; genre: string; languageCode: string; references: ProjectReference[] };
   productionBible: ProductionBible | null;
   scenes: Scene[];
   status: string;
@@ -62,6 +64,8 @@ export function StoryPlanningSetup({ projectId, project, productionBible, scenes
         </div>
         <p className="synopsis">{project.synopsis}</p>
       </section>
+
+      <ProjectReferences projectId={projectId} references={project.references} />
 
       {/* Generated Production Bible */}
       {productionBible && (

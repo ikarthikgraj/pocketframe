@@ -20,7 +20,7 @@ test("Production Bible contract accepts required planning fields and rejects inv
   const result = productionBibleSchema.safeParse({ premise: { text: "A premise", groundedness: "FROM_SYNOPSIS" } });
   assert.equal(result.success, false);
   const planned = new MockStoryPlanner();
-  const project = { id: "p1", title: "The Last Voice Note", synopsis, genre: "Thriller", languageCode: "en-IN", status: "DRAFT" as const, productionBible: null, voiceBible: null, createdAt: "now", updatedAt: "now" };
+  const project = { id: "p1", title: "The Last Voice Note", synopsis, genre: "Thriller", languageCode: "en-IN", status: "DRAFT" as const, references: [], productionBible: null, voiceBible: null, createdAt: "now", updatedAt: "now" };
   return planned.plan(project, segmentSynopsis(synopsis)).then(({ productionBible, scenes }) => assert.equal(productionBible.sceneCount, scenes.length));
 });
 
