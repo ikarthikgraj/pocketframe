@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ProjectListItem } from "@/lib/db/repositories";
+import { ProjectCardActions } from "@/components/project-card-actions";
 
 const statusCopy: Record<string, string> = {
   DRAFT: "Story in progress",
@@ -29,7 +30,7 @@ export function ProjectsHeader() {
 export function ProjectCard({ project }: { project: ProjectListItem }) {
   const progress = project.totalScenes ? Math.round((project.approvedScenes / project.totalScenes) * 100) : 0;
   const readiness = project.status === "COMPLETE" ? "Complete" : project.status === "READY_TO_RENDER" ? "Ready to render" : "In progress";
-  return <article className="project-card"><div className="project-card-title"><h2>{project.title}</h2><span className={`status-badge status-${project.status.toLowerCase().replaceAll("_", "-")}`}>{statusLabel(project.status)}</span></div><p className="project-card-genre">{project.genre} · {project.languageCode}</p><dl className="project-card-details"><div><dt>Stage</dt><dd>{statusLabel(project.status)}</dd></div><div><dt>Readiness</dt><dd>{readiness}</dd></div><div><dt>Scenes</dt><dd>{project.totalScenes}</dd></div><div><dt>Updated</dt><dd>{formatUpdated(project.updatedAt)}</dd></div></dl><div className="project-card-progress"><div><span>Progress</span><strong>{progress}%</strong></div><span><i style={{ width: `${progress}%` }} /></span></div><Link className="button open-project" href={`/projects/${project.id}`}>Open Project</Link></article>;
+  return <article className="project-card"><div className="project-card-title"><h2>{project.title}</h2><span className={`status-badge status-${project.status.toLowerCase().replaceAll("_", "-")}`}>{statusLabel(project.status)}</span></div><p className="project-card-genre">{project.genre} · {project.languageCode}</p><dl className="project-card-details"><div><dt>Stage</dt><dd>{statusLabel(project.status)}</dd></div><div><dt>Readiness</dt><dd>{readiness}</dd></div><div><dt>Scenes</dt><dd>{project.totalScenes}</dd></div><div><dt>Updated</dt><dd>{formatUpdated(project.updatedAt)}</dd></div></dl><div className="project-card-progress"><div><span>Progress</span><strong>{progress}%</strong></div><span><i style={{ width: `${progress}%` }} /></span></div><ProjectCardActions projectId={project.id} projectTitle={project.title} /></article>;
 }
 
 export function EmptyProjectsState() {

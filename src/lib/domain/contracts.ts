@@ -17,6 +17,7 @@ export const createProjectSchema = z.object({
   synopsis: z.string().min(1).max(10_000),
   genre: z.string().trim().min(1).max(100),
   languageCode: z.string().trim().min(2).max(35),
+  defaultVideoDurationSeconds: z.union([z.literal(4), z.literal(6), z.literal(8), z.literal(10), z.literal(12)]).optional().default(8),
 });
 
 export const updateProjectSchema = createProjectSchema.partial().extend({
@@ -83,7 +84,7 @@ export const generateTtsSchema = z.object({
 
 export const approveTtsSchema = z.object({ approved: z.literal(true) });
 export const updateNarrationScriptSchema = z.object({ narration: z.string().trim().min(1).max(10_000) });
-export const audioVersionActionSchema = z.object({ action: z.enum(["select", "approve", "reject"]) });
+export const audioVersionActionSchema = z.object({ action: z.enum(["select", "approve", "reject", "unapprove"]) });
 
 export const generateVideoSchema = z.object({
   prompt: z.string().trim().min(1).max(8_000).optional(),

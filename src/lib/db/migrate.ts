@@ -70,6 +70,11 @@ const migrations = [
       ALTER TABLE audio_versions ADD COLUMN selected_at TEXT;`,
   },
   { id: "008_video_model_metadata", sql: "ALTER TABLE scene_versions ADD COLUMN video_model TEXT;" },
+  {
+    id: "009_final_workflow_safety",
+    sql: `ALTER TABLE projects ADD COLUMN default_video_duration_seconds INTEGER NOT NULL DEFAULT 8;
+      ALTER TABLE scene_versions ADD COLUMN approved_at TEXT;`,
+  },
 ];
 
 export function runMigrations(database: Database.Database) {
