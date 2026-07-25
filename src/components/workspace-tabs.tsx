@@ -2,17 +2,19 @@
 
 import { useState, type ReactNode } from "react";
 import type { WorkflowTab } from "@/lib/workflow";
+import { WorkspaceNavigationProvider } from "@/components/workspace-navigation";
 
 export { WORKFLOW_TABS } from "@/lib/workflow";
 
 type Stage = { name: WorkflowTab; ready: boolean; blockedMessage?: string; content: ReactNode };
 
-export function WorkspaceTabs({ stages, initialTab }: { stages: Stage[]; initialTab: WorkflowTab }) {
+export function WorkspaceTabs({ stages, initialTab, overview }: { stages: Stage[]; initialTab: WorkflowTab; overview?: ReactNode }) {
   const [activeTab, setActiveTab] = useState<WorkflowTab>(initialTab);
   const activeStage = stages.find((stage) => stage.name === activeTab) ?? stages[0];
   const blockedStage = stages.find((stage) => !stage.ready && stage.name !== "Story");
 
-  return <>
+  return <WorkspaceNavigationProvider value={setActiveTab}>
+    {overview}
     <nav className="workspace-tabs" aria-label="Production workflow" role="tablist">
       {stages.map((stage) => {
         const selected = activeStage.name === stage.name;
@@ -27,5 +29,5 @@ export function WorkspaceTabs({ stages, initialTab }: { stages: Stage[]; initial
     <section id={`panel-${activeStage.name}`} role="tabpanel" aria-label={activeStage.name} className="workspace-stage">
       {activeStage.content}
     </section>
-  </>;
+  </WorkspaceNavigationProvider>;
 }
