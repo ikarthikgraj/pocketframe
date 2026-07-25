@@ -21,7 +21,7 @@ type VersionRow = {
 
 export type ProjectReference = { id: string; projectId: string; displayName: string; type: ProjectReferenceType; localPath: string; description: string | null; uploadedAt: string; source: "user-uploaded"; active: boolean };
 export type Project = { id: string; title: string; synopsis: string; genre: string; languageCode: string; status: ProjectStatus; references: ProjectReference[]; productionBible: ProductionBible | null; voiceBible: VoiceBible | null; createdAt: string; updatedAt: string };
-export type ProjectListItem = Pick<Project, "id" | "title" | "status" | "updatedAt"> & { approvedScenes: number; totalScenes: number };
+export type ProjectListItem = Pick<Project, "id" | "title" | "genre" | "languageCode" | "status" | "updatedAt"> & { approvedScenes: number; totalScenes: number };
 export type Scene = { id: string; projectId: string; sceneNumber: number; exactText: string; status: SceneStatus; emotion: string | null; mood: string | null; cameraIntent: string | null; estimatedDurationSeconds: number | null; promptNotes: string | null; intensity: number | null; pace: string | null; energy: string | null; endingStyle: string | null; deliveryPrompt: string | null; ttsPath: string | null; ttsDurationMs: number | null; targetVideoDurationMs: number | null; videoDurationSeconds: number | null; selectedReferenceIds: string[]; approvedVersionId: string | null; negativePrompt: string | null; createdAt: string; updatedAt: string };
 export type SceneVersion = { id: string; sceneId: string; versionNumber: number; provider: string; status: VersionStatus; prompt: string | null; negativePrompt: string | null; providerJobId: string | null; videoPath: string | null; durationMs: number | null; errorMessage: string | null; createdAt: string; updatedAt: string };
 export type AudioVersion = { id: string; sceneId: string; versionNumber: number; provider: string; model: string; audioPath: string; durationMs: number; status: "READY" | "APPROVED"; createdAt: string; approvedAt: string | null };
@@ -47,10 +47,10 @@ export function createRepositories(database: Database.Database) {
       return project;
     },
     listProjects(): ProjectListItem[] {
-      const rows = database.prepare(`SELECT p.id, p.title, p.status, p.updated_at,
+      const rows = database.prepare(`SELECT p.id, p.title, p.genre, p.language_code, p.status, p.updated_at,
         COUNT(s.id) AS total_scenes, SUM(CASE WHEN s.approved_version_id IS NOT NULL THEN 1 ELSE 0 END) AS approved_scenes
-        FROM projects p LEFT JOIN scenes s ON s.project_id = p.id GROUP BY p.id ORDER BY p.updated_at DESC`).all() as Array<{ id: string; title: string; status: ProjectStatus; updated_at: string; total_scenes: number; approved_scenes: number | null }>;
-      return rows.map((row) => ({ id: row.id, title: row.title, status: row.status, updatedAt: row.updated_at, totalScenes: row.total_scenes, approvedScenes: row.approved_scenes ?? 0 }));
+        FROM projects p LEFT JOIN scenes s ON s.project_id = p.id GROUP BY p.id ORDER BY p.updated_at DESC`).all() as Array<{ id: string; title: string; genre: string; language_code: string; status: ProjectStatus; updated_at: string; total_scenes: number; approved_scenes: number | null }>;
+      return rows.map((row) => ({ id: row.id, title: row.title, genre: row.genre, languageCode: row.language_code, status: row.status, updatedAt: row.updated_at, totalScenes: row.total_scenes, approvedScenes: row.approved_scenes ?? 0 }));
     },
     getProject(id: string): Project | undefined {
       const row = database.prepare("SELECT * FROM projects WHERE id = ?").get(id) as ProjectRow | undefined;

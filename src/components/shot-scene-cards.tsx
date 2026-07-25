@@ -73,23 +73,23 @@ export function ShotSceneCards({ projectId, references, scenes, versions }: Prop
   const approvedCount = scenes.filter((scene) => scene.approvedVersionId).length;
 
   return (
-    <section id="clips" className="voice-section fade-in">
-      <BeginnerHint>AI Video Studio: Select a scene beat, tweak AI model, resolution quality, reference image, and visual prompt, then generate & approve clips.</BeginnerHint>
+    <section id="shots" className="voice-section fade-in">
+      <BeginnerHint>Generate silent visuals, then approve the best version. Narration is added in Final Cut.</BeginnerHint>
 
       <div className="section-heading" style={{ marginBottom: 12 }}>
         <div>
-          <p className="eyebrow">AI Video Studio Canvas</p>
-          <h2>Visual Clips Generator</h2>
+          <p className="eyebrow">Shots workspace</p>
+          <h2>Visual Shot Review</h2>
         </div>
         <span className="status-badge status-neutral">
-          {approvedCount} of {scenes.length} clips approved
+          {approvedCount} of {scenes.length} shots approved
         </span>
       </div>
 
       {error && <p className="error" role="alert" style={{ marginBottom: 16 }}>{error}</p>}
 
       {/* Horizontal Scene selector */}
-      <div className="scene-selector" role="tablist" aria-label="Visual clip scenes">
+      <div className="scene-selector" role="tablist" aria-label="Visual shot scenes">
         {scenes.map((scene) => {
           const isSelected = selectedScene.id === scene.id;
           const isSceneApproved = Boolean(scene.approvedVersionId);
@@ -210,7 +210,7 @@ function StudioCanvas({
               <div className="canvas-placeholder">
                 <span className="placeholder-icon">🎬</span>
                 <strong>Scene {String(scene.sceneNumber).padStart(2, "0")} Canvas</strong>
-                <p>Click &ldquo;Generate Clip&rdquo; to render with {model}</p>
+                <p>Generate a silent shot when the approved voice is ready.</p>
               </div>
             )}
           </div>
@@ -301,11 +301,11 @@ function StudioCanvas({
           <div className="studio-actions-toolbar">
             <button onClick={generate} disabled={working} className={working ? "is-working" : ""}>
               {working ? <span className="spinner" /> : null}
-              {working ? "Generating Clip…" : selectedVersion ? `Regenerate Clip (${model})` : `Generate Clip (${model})`}
+              {working ? "Generating Silent Shot…" : selectedVersion ? "Regenerate" : "Generate Silent Shot"}
             </button>
 
             <button className="secondary" onClick={() => uploadRef.current?.click()} disabled={working}>
-              Upload Video
+              Upload Replacement
             </button>
 
             <input

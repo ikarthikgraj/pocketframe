@@ -48,7 +48,7 @@ export function FinalCutPanel({
 
   return (
     <section id="final-cut" className="export-gate">
-      <BeginnerHint>The 30–40s trailer can only render after voice narration and all video clips are approved.</BeginnerHint>
+      <BeginnerHint>PocketFrame combines approved visuals and narration into the final trailer.</BeginnerHint>
 
       {/* Readiness & Checklist */}
       <section className="final-readiness">
@@ -63,7 +63,7 @@ export function FinalCutPanel({
           items={[
             { label: "Story plan complete", complete: scenes.length > 0, detail: `${scenes.length} scenes planned` },
             { label: "Narration approved", complete: approvedVoices === scenes.length && scenes.length > 0, detail: `${approvedVoices}/${scenes.length} scenes approved` },
-            { label: "Visual clips approved", complete: approvedScenes === scenes.length && scenes.length > 0, detail: `${approvedScenes}/${scenes.length} scenes approved` },
+            { label: "Visual shots approved", complete: approvedScenes === scenes.length && scenes.length > 0, detail: `${approvedScenes}/${scenes.length} scenes approved` },
             { label: "Background Music", complete: true, detail: "Optional — upload custom audio or render silent background" },
           ]}
         />

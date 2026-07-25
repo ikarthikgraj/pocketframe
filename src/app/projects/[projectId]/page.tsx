@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { repositories } from "@/lib/db";
 import { WorkspaceTabs } from "@/components/workspace-tabs";
@@ -7,8 +6,8 @@ import { StoryPlanningSetup } from "@/components/story-planning-setup";
 import { VoiceSceneCards } from "@/components/voice-scene-cards";
 import { ShotSceneCards } from "@/components/shot-scene-cards";
 import { FinalCutPanel } from "@/components/final-cut-panel";
-import { ProjectWorkspaceOverview } from "@/components/project-workspace-overview";
-import { deriveMilestones, displayProjectStatus, nextRecommendedAction, overallProgress, productionPipeline } from "@/lib/production-ux";
+import { ProjectWorkspaceHeader } from "@/components/project-workspace-header";
+import { deriveMilestones, displayProjectStatus, nextRecommendedAction, overallProgress } from "@/lib/production-ux";
 
 export default async function ProjectWorkspace({ params }: { params: Promise<{ projectId: string }> }) {
   const project = repositories().getProject((await params).projectId);
@@ -28,32 +27,21 @@ export default async function ProjectWorkspace({ params }: { params: Promise<{ p
 
   const initialTab = nextWorkflowTab({ storyReady, voiceReady, shotsReady });
   const story = <StoryPlanningSetup projectId={project.id} project={{ title: project.title, synopsis: project.synopsis, genre: project.genre, languageCode: project.languageCode, references: project.references }} productionBible={project.productionBible} scenes={scenes} status={project.status} />;
-  const duration = project.productionBible?.trailerDurationSeconds ? `${project.productionBible.trailerDurationSeconds}s trailer` : "30–40s target";
-
   return (
     <div className="workspace-shell">
-      <header className="app-header">
-        <Link className="brand" href="/">
-          <span className="brand-mark">PF</span>
-          <span>PocketFrame <small>AI TRAILER STUDIO</small></span>
-        </Link>
-        <div className="header-project">
-          <strong>{project.title}</strong>
-          <span className="status-badge status-neutral">{displayProjectStatus(project.status)}</span>
-        </div>
-      </header>
+      <header className="app-header"><span className="brand"><span className="brand-mark">PF</span><span>PocketFrame <small>AI TRAILER STUDIO</small></span></span></header>
 
       <main className="workspace-content">
         <WorkspaceTabs
           initialTab={initialTab}
           overview={
-            <ProjectWorkspaceOverview
+            <ProjectWorkspaceHeader
               title={project.title}
-              trailerDuration={duration}
+              genre={project.genre}
+              language={project.languageCode}
               progress={overallProgress(milestones)}
               stage={displayProjectStatus(project.status)}
               action={nextRecommendedAction(ux)}
-              pipeline={productionPipeline(ux)}
             />
           }
           stages={[
@@ -65,15 +53,15 @@ export default async function ProjectWorkspace({ params }: { params: Promise<{ p
               content: <VoiceSceneCards projectId={project.id} scenes={scenes} audioVersions={audioVersions} voiceBible={project.voiceBible} />,
             },
             {
-              name: "Clips",
+              name: "Shots",
               ready: voiceReady,
-              blockedMessage: "Approve voice narration first.",
+              blockedMessage: "Approve voice narration first. Visual shots are timed to approved narration.",
               content: <ShotSceneCards projectId={project.id} references={project.references} scenes={scenes} versions={versions} />,
             },
             {
               name: "Final Cut",
               ready: readiness.ready,
-              blockedMessage: "Approve all clips first.",
+              blockedMessage: "Approve all shots first.",
               content: <FinalCutPanel projectId={project.id} title={project.title} scenes={scenes} ready={readiness.ready} render={render} />,
             },
           ]}

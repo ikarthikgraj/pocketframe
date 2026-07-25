@@ -41,8 +41,8 @@ export function overallProgress(milestones: Pick<Milestones, "storyComplete" | "
 
 export function blockedStageExplanation(tab: WorkflowTab, milestones: Milestones) {
   if (tab === "Voice" && !milestones.storyComplete) return "Complete Story Planning first. Voice direction depends on the approved production plan.";
-  if (tab === "Clips" && !milestones.voiceComplete) return "Approve voice narration first. Visual clips are timed to approved narration.";
-  if (tab === "Final Cut" && !milestones.shotsComplete) return "Approve one clip for every scene first. Final assembly uses approved clips.";
+  if (tab === "Shots" && !milestones.voiceComplete) return "Approve voice narration first. Visual shots are timed to approved narration.";
+  if (tab === "Final Cut" && !milestones.shotsComplete) return "Approve one shot for every scene first. Final assembly uses approved shots.";
   return undefined;
 }
 
@@ -53,14 +53,14 @@ export function nextRecommendedAction(input: ProductionUxInput): RecommendedActi
   const unapprovedVoice = input.scenes.find((scene) => !input.audioVersions[scene.id]?.some((version) => version.status === "APPROVED"));
   if (unapprovedVoice) {
     const hasAudio = input.audioVersions[unapprovedVoice.id]?.length;
-    return { title: `${hasAudio ? "Approve" : "Generate"} voice narration`, reason: "Visual clips are matched to the approved narration duration.", buttonLabel: "Open Voice Review", targetTab: "Voice" };
+    return { title: `${hasAudio ? "Approve" : "Generate"} voice narration`, reason: "Visual shots are matched to the approved narration duration.", buttonLabel: "Open Voice Review", targetTab: "Voice" };
   }
   const unapprovedShot = input.scenes.find((scene) => !scene.approvedVersionId && !input.versions[scene.id]?.some((version) => version.status === "APPROVED"));
   if (unapprovedShot) {
     const hasReadyShot = input.versions[unapprovedShot.id]?.some((version) => version.status === "READY");
-    return { title: `${hasReadyShot ? "Review" : "Generate"} Scene ${unapprovedShot.sceneNumber} clip`, reason: "Final assembly uses approved visual clips for each scene beat.", buttonLabel: "Open Clips Studio", targetTab: "Clips" };
+    return { title: `${hasReadyShot ? "Review" : "Generate"} Scene ${unapprovedShot.sceneNumber} shot`, reason: "Final assembly uses approved visual shots for each scene beat.", buttonLabel: "Open Shots Studio", targetTab: "Shots" };
   }
-  if (input.render?.status !== "COMPLETE") return { title: "Export the 30–40s trailer", reason: "All approved narration and clips are ready for final assembly.", buttonLabel: "Open Final Cut", targetTab: "Final Cut" };
+  if (input.render?.status !== "COMPLETE") return { title: "Export the 30–40s trailer", reason: "All approved narration and shots are ready for final assembly.", buttonLabel: "Open Final Cut", targetTab: "Final Cut" };
   return { title: "Review the final trailer", reason: "Your approved trailer is ready to play and download.", buttonLabel: "Open Final Cut", targetTab: "Final Cut" };
 }
 
@@ -79,7 +79,7 @@ export function productionPipeline(input: ProductionUxInput): PipelineItem[] {
   return [
     { number: 1, name: "Story Planning", status: storyStatus, message: bible ? `${m.totalScenes} scenes planned (30–40s)` : "Ready for analysis" },
     { number: 2, name: "Voice Narration", status: voiceStatus, message: m.voiceComplete ? "Single narration MP3 approved" : "Ready to generate" },
-    { number: 3, name: "Visual Clips Studio", status: clipStatus, message: m.shotsComplete ? "All scene clips approved" : "Higgsfield AI Studio ready" },
+    { number: 3, name: "Shots", status: clipStatus, message: m.shotsComplete ? "All scene shots approved" : "Visual shot review ready" },
     { number: 4, name: "Final Cut Export", status: finalStatus, message: finalStatus === "Complete" ? "Trailer MP4 ready" : "Ready to render" },
   ];
 }
@@ -90,8 +90,8 @@ export function productionTeam(input: ProductionUxInput): TeamRole[] {
   return [
     { role: "Story Analyst", task: !input.project.productionBible ? "Preparing the Production Bible" : m.storyComplete ? "Production Bible and scene plan complete" : "Waiting for Production Bible approval", status: !input.project.productionBible ? (input.project.status === "ANALYZING" ? "Running" : "Ready") : m.storyComplete ? "Complete" : "Review Required" },
     { role: "Voice Director", task: !m.storyComplete ? "Waiting for story planning" : m.voiceComplete ? "Single narration MP3 approved" : next.targetTab === "Voice" ? next.title : "Narration review in progress", status: !m.storyComplete ? "Blocked" : m.voiceComplete ? "Complete" : "Review Required" },
-    { role: "Visual Director", task: !m.voiceComplete ? "Waiting for approved narration" : m.shotsComplete ? "All visual clips approved" : next.targetTab === "Clips" ? next.title : "Ready for visual clips", status: !m.voiceComplete ? "Blocked" : m.shotsComplete ? "Complete" : "Ready" },
-    { role: "Trailer Editor", task: input.render?.status === "COMPLETE" ? "Trailer export complete" : !m.shotsComplete ? "Waiting for approved clips" : input.render?.status === "RENDERING" ? "Assembling approved media" : "Ready for final assembly", status: input.render?.status === "COMPLETE" ? "Complete" : !m.shotsComplete ? "Waiting" : input.render?.status === "RENDERING" ? "Running" : "Ready" },
+    { role: "Visual Director", task: !m.voiceComplete ? "Waiting for approved narration" : m.shotsComplete ? "All visual shots approved" : next.targetTab === "Shots" ? next.title : "Ready for visual shots", status: !m.voiceComplete ? "Blocked" : m.shotsComplete ? "Complete" : "Ready" },
+    { role: "Trailer Editor", task: input.render?.status === "COMPLETE" ? "Trailer export complete" : !m.shotsComplete ? "Waiting for approved shots" : input.render?.status === "RENDERING" ? "Assembling approved media" : "Ready for final assembly", status: input.render?.status === "COMPLETE" ? "Complete" : !m.shotsComplete ? "Waiting" : input.render?.status === "RENDERING" ? "Running" : "Ready" },
   ];
 }
 

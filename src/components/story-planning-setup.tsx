@@ -98,7 +98,7 @@ export function StoryPlanningSetup({ projectId, project, productionBible, scenes
             </div>
 
             {status === "BIBLE_READY" && (
-              <p className="review-callout">Review required: approve this plan to unlock Voice & Clips.</p>
+              <p className="review-callout">Review required: approve this plan to unlock Voice and Shots.</p>
             )}
           </section>
 
