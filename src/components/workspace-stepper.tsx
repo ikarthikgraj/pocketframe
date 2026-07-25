@@ -1,2 +1,2 @@
-const steps = ["Story", "Shots", "Voice", "Final Cut"];
+const steps = ["Story", "Voice", "Shots", "Final Cut"];
 export function WorkspaceStepper({ current = "Story" }: { current?: string }) { const active = steps.indexOf(current); return <nav className="stepper" aria-label="Production steps">{steps.map((step, index) => <span className={index < active ? "complete" : step === current ? "current" : ""} key={step}><i>{index < active ? "✓" : String(index + 1).padStart(2, "0")}</i>{step}</span>)}</nav>; }

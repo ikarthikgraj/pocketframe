@@ -1,0 +1,31 @@
+"use client";
+
+import { useState, type ReactNode } from "react";
+import type { WorkflowTab } from "@/lib/workflow";
+
+export { WORKFLOW_TABS } from "@/lib/workflow";
+
+type Stage = { name: WorkflowTab; ready: boolean; blockedMessage?: string; content: ReactNode };
+
+export function WorkspaceTabs({ stages, initialTab }: { stages: Stage[]; initialTab: WorkflowTab }) {
+  const [activeTab, setActiveTab] = useState<WorkflowTab>(initialTab);
+  const activeStage = stages.find((stage) => stage.name === activeTab) ?? stages[0];
+  const blockedStage = stages.find((stage) => !stage.ready && stage.name !== "Story");
+
+  return <>
+    <nav className="workspace-tabs" aria-label="Production workflow" role="tablist">
+      {stages.map((stage) => {
+        const selected = activeStage.name === stage.name;
+        const blocked = !stage.ready && stage.name !== "Story";
+        return <button key={stage.name} type="button" role="tab" aria-selected={selected} aria-controls={`panel-${stage.name}`} className={`workspace-tab ${selected ? "is-active" : ""} ${blocked ? "is-blocked" : ""}`} disabled={blocked} title={blocked ? stage.blockedMessage : undefined} onClick={() => setActiveTab(stage.name)}>
+          {stage.ready && <span className="tab-check" aria-label="Completed">✓</span>}
+          {stage.name}
+        </button>;
+      })}
+    </nav>
+    {blockedStage?.blockedMessage && <p className="tab-hint">{blockedStage.blockedMessage}</p>}
+    <section id={`panel-${activeStage.name}`} role="tabpanel" aria-label={activeStage.name} className="workspace-stage">
+      {activeStage.content}
+    </section>
+  </>;
+}
