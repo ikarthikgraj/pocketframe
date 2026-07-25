@@ -19,8 +19,8 @@ export async function POST(request: Request, { params }: Context) {
     validateSynopsisReconstruction(project.synopsis, segments);
     const plan = await storyPlanner.plan(project, segments);
     validateSynopsisReconstruction(project.synopsis, plan.scenes.map((scene) => scene.exactText));
-    const updated = repositories().replacePlanning(projectId, plan.productionBible, plan.scenes);
-    return NextResponse.json({ projectId, status: updated?.status, productionBible: plan.productionBible, scenes: repositories().listScenes(projectId) });
+    const updated = repositories().replacePlanning(projectId, plan.productionBible, plan.voiceBible, plan.scenes);
+    return NextResponse.json({ projectId, status: updated?.status, productionBible: plan.productionBible, voiceBible: plan.voiceBible, scenes: repositories().listScenes(projectId) });
   } catch (error) {
     const reconstruction = error instanceof SynopsisReconstructionError;
     return NextResponse.json({ error: { code: reconstruction ? error.code : "PLANNING_ERROR", message: error instanceof Error ? error.message : "Could not analyze this project." } }, { status: 422 });

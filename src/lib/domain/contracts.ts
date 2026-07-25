@@ -42,6 +42,21 @@ export const productionBibleSchema = z.object({
   sceneCount: z.number().int().min(1).max(6),
 });
 
+export const voiceBibleSchema = z.object({
+  narratorPersona: z.string().trim().min(1),
+  voiceStyle: z.string().trim().min(1),
+  tone: z.string().trim().min(1),
+  baselinePace: z.string().trim().min(1),
+  baselineEmotion: z.string().trim().min(1),
+  pronunciationNotes: z.string(),
+  languageCode: z.string().trim().min(2).max(35),
+  ttsProvider: z.string().trim().min(1),
+  providerVoice: z.string().trim().min(1),
+  accent: z.string().trim().min(1),
+  timbre: z.string().trim().min(1),
+  baselineStylePrompt: z.string().trim().min(1),
+});
+
 export const plannedSceneSchema = z.object({
   sceneNumber: z.number().int().positive(),
   exactText: z.string().min(1),
@@ -50,11 +65,23 @@ export const plannedSceneSchema = z.object({
   cameraIntent: z.string().trim().min(1),
   estimatedDurationSeconds: z.number().positive(),
   promptNotes: z.string().trim().min(1),
+  intensity: z.number().int().min(1).max(10),
+  pace: z.string().trim().min(1),
+  energy: z.string().trim().min(1),
+  endingStyle: z.string().trim().min(1),
+  deliveryPrompt: z.string().trim().min(1),
 });
 
 export const analyzeProjectSchema = z.object({
   maxScenes: z.number().int().min(1).max(6).optional().default(6),
 });
+
+export const generateTtsSchema = z.object({
+  deliveryPrompt: z.string().trim().min(1).max(2_000).optional(),
+  quality: z.enum(["preview", "final"]).optional().default("preview"),
+});
+
+export const approveTtsSchema = z.object({ approved: z.literal(true) });
 
 export type ProjectStatus = z.infer<typeof projectStatusSchema>;
 export type SceneStatus = z.infer<typeof sceneStatusSchema>;
@@ -62,4 +89,5 @@ export type VersionStatus = z.infer<typeof versionStatusSchema>;
 export type CreateProjectInput = z.infer<typeof createProjectSchema>;
 export type UpdateProjectInput = z.infer<typeof updateProjectSchema>;
 export type ProductionBible = z.infer<typeof productionBibleSchema>;
+export type VoiceBible = z.infer<typeof voiceBibleSchema>;
 export type PlannedScene = z.infer<typeof plannedSceneSchema>;

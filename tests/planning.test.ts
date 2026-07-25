@@ -20,7 +20,7 @@ test("Production Bible contract accepts required planning fields and rejects inv
   const result = productionBibleSchema.safeParse({ premise: { text: "A premise", groundedness: "FROM_SYNOPSIS" } });
   assert.equal(result.success, false);
   const planned = new MockStoryPlanner();
-  const project = { id: "p1", title: "The Last Voice Note", synopsis, genre: "Thriller", languageCode: "en-IN", status: "DRAFT" as const, productionBible: null, createdAt: "now", updatedAt: "now" };
+  const project = { id: "p1", title: "The Last Voice Note", synopsis, genre: "Thriller", languageCode: "en-IN", status: "DRAFT" as const, productionBible: null, voiceBible: null, createdAt: "now", updatedAt: "now" };
   return planned.plan(project, segmentSynopsis(synopsis)).then(({ productionBible, scenes }) => assert.equal(productionBible.sceneCount, scenes.length));
 });
 
@@ -28,7 +28,7 @@ test("mock scene generation persists the bible and exact scenes", async () => {
   const database = new Database(":memory:"); database.pragma("foreign_keys = ON"); runMigrations(database);
   const repo = createRepositories(database); const project = repo.createProject({ title: "The Last Voice Note", synopsis, genre: "Thriller", languageCode: "en-IN" });
   const planned = await new MockStoryPlanner().plan(project, segmentSynopsis(synopsis));
-  repo.replacePlanning(project.id, planned.productionBible, planned.scenes);
+  repo.replacePlanning(project.id, planned.productionBible, planned.voiceBible, planned.scenes);
   const scenes = repo.listScenes(project.id);
   assert.equal(repo.getProject(project.id)?.status, "BIBLE_READY");
   assert.equal(scenes.map((scene) => scene.exactText).join(""), normalizeSynopsis(synopsis));

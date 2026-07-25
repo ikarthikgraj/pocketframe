@@ -16,6 +16,20 @@ bun dev
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
+## Optional Gemini TTS smoke test
+
+The app uses local fixture WAV audio by default. To exercise Gemini TTS, add these server-only values to `.env.local`:
+
+```bash
+POCKETFRAME_TTS_PROVIDER=gemini
+GEMINI_TTS_API_KEY=...
+GEMINI_TTS_MODEL=...
+GEMINI_TTS_VOICE=...
+# Optional: GEMINI_TTS_ENDPOINT=https://generativelanguage.googleapis.com/v1beta/models
+```
+
+Then run `npm run tts:smoke`. It writes a WAV file under `data/smoke/` and reports its ffprobe duration.
+
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.

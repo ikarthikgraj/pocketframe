@@ -11,6 +11,23 @@ const migrations = [
       ALTER TABLE scenes ADD COLUMN estimated_duration_seconds REAL;
       ALTER TABLE scenes ADD COLUMN prompt_notes TEXT;`,
   },
+  {
+    id: "003_voice_workflow",
+    sql: `CREATE TABLE IF NOT EXISTS audio_versions (
+        id TEXT PRIMARY KEY,
+        scene_id TEXT NOT NULL REFERENCES scenes(id) ON DELETE CASCADE,
+        version_number INTEGER NOT NULL,
+        provider TEXT NOT NULL,
+        model TEXT NOT NULL,
+        audio_path TEXT NOT NULL,
+        duration_ms INTEGER NOT NULL,
+        status TEXT NOT NULL DEFAULT 'READY',
+        created_at TEXT NOT NULL,
+        approved_at TEXT,
+        UNIQUE(scene_id, version_number)
+      );
+      CREATE INDEX IF NOT EXISTS audio_versions_scene_id_idx ON audio_versions(scene_id);`,
+  },
 ];
 
 export function runMigrations(database: Database.Database) {
