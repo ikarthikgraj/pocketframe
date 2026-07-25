@@ -23,11 +23,15 @@ export type ProjectListItem = Pick<Project, "id" | "title" | "status" | "updated
 export type Scene = { id: string; projectId: string; sceneNumber: number; exactText: string; status: SceneStatus; emotion: string | null; mood: string | null; cameraIntent: string | null; estimatedDurationSeconds: number | null; promptNotes: string | null; intensity: number | null; pace: string | null; energy: string | null; endingStyle: string | null; deliveryPrompt: string | null; ttsPath: string | null; ttsDurationMs: number | null; targetVideoDurationMs: number | null; approvedVersionId: string | null; negativePrompt: string | null; createdAt: string; updatedAt: string };
 export type SceneVersion = { id: string; sceneId: string; versionNumber: number; provider: string; status: VersionStatus; prompt: string | null; negativePrompt: string | null; providerJobId: string | null; videoPath: string | null; durationMs: number | null; errorMessage: string | null; createdAt: string; updatedAt: string };
 export type AudioVersion = { id: string; sceneId: string; versionNumber: number; provider: string; model: string; audioPath: string; durationMs: number; status: "READY" | "APPROVED"; createdAt: string; approvedAt: string | null };
+export type RenderStatus = "NOT_READY" | "READY" | "RENDERING" | "COMPLETE" | "FAILED";
+export type RenderVersion = { id: string; projectId: string; versionNumber: number; status: RenderStatus; startedAt: string | null; completedAt: string | null; outputPath: string | null; durationMs: number | null; errorMessage: string | null; musicPath: string | null; createdAt: string };
+type RenderRow = { id: string; project_id: string; version_number: number; status: RenderStatus; started_at: string | null; completed_at: string | null; output_path: string | null; duration_ms: number | null; error_message: string | null; music_path: string | null; created_at: string };
 
 const projectFromRow = (row: ProjectRow): Project => ({ id: row.id, title: row.title, synopsis: row.synopsis, genre: row.genre, languageCode: row.language_code, status: row.status, productionBible: row.story_bible_json ? JSON.parse(row.story_bible_json) as ProductionBible : null, voiceBible: row.voice_bible_json ? JSON.parse(row.voice_bible_json) as VoiceBible : null, createdAt: row.created_at, updatedAt: row.updated_at });
 const sceneFromRow = (row: SceneRow): Scene => ({ id: row.id, projectId: row.project_id, sceneNumber: row.scene_number, exactText: row.exact_text, status: row.status, emotion: row.emotion, mood: row.mood, cameraIntent: row.camera_intent, estimatedDurationSeconds: row.estimated_duration_seconds, promptNotes: row.prompt_notes, intensity: row.intensity, pace: row.pace, energy: row.energy, endingStyle: row.ending_style, deliveryPrompt: row.delivery_prompt, ttsPath: (row as SceneRow & { tts_path: string | null }).tts_path, ttsDurationMs: (row as SceneRow & { tts_duration_ms: number | null }).tts_duration_ms, targetVideoDurationMs: (row as SceneRow & { target_video_duration_ms: number | null }).target_video_duration_ms, approvedVersionId: row.approved_version_id, negativePrompt: (row as SceneRow & { negative_prompt: string | null }).negative_prompt, createdAt: row.created_at, updatedAt: row.updated_at });
 const versionFromRow = (row: VersionRow): SceneVersion => ({ id: row.id, sceneId: row.scene_id, versionNumber: row.version_number, provider: row.provider, status: row.status, prompt: row.prompt, negativePrompt: row.negative_prompt, providerJobId: row.provider_job_id, videoPath: row.video_path, durationMs: row.duration_ms, errorMessage: row.error_message, createdAt: row.created_at, updatedAt: row.updated_at });
 const audioVersionFromRow = (row: AudioVersionRow): AudioVersion => ({ id: row.id, sceneId: row.scene_id, versionNumber: row.version_number, provider: row.provider, model: row.model, audioPath: row.audio_path, durationMs: row.duration_ms, status: row.status, createdAt: row.created_at, approvedAt: row.approved_at });
+const renderFromRow = (row: RenderRow): RenderVersion => ({ id: row.id, projectId: row.project_id, versionNumber: row.version_number, status: row.status, startedAt: row.started_at, completedAt: row.completed_at, outputPath: row.output_path, durationMs: row.duration_ms, errorMessage: row.error_message, musicPath: row.music_path, createdAt: row.created_at });
 
 export function createRepositories(database: Database.Database) {
   return {
@@ -181,5 +185,31 @@ export function createRepositories(database: Database.Database) {
       })();
       return this.getSceneVersion(versionId);
     },
+    getRenderReadiness(projectId: string) {
+      const scenes = this.listScenes(projectId);
+      const missingSceneIds = scenes.filter((scene) => {
+        const approvedAudio = this.listAudioVersions(scene.id).filter((audio) => audio.status === "APPROVED").length === 1;
+        const approvedVideo = this.listSceneVersions(scene.id).filter((version) => version.status === "APPROVED").length === 1;
+        return !approvedAudio || !approvedVideo;
+      }).map((scene) => scene.id);
+      return { ready: scenes.length > 0 && missingSceneIds.length === 0, missingSceneIds, scenes };
+    },
+    createRenderVersion(projectId: string, musicPath?: string | null): RenderVersion {
+      const next = database.prepare("SELECT COALESCE(MAX(version_number), 0) + 1 AS version_number FROM render_versions WHERE project_id = ?").get(projectId) as { version_number: number };
+      const now = new Date().toISOString(); const render: RenderVersion = { id: randomUUID(), projectId, versionNumber: next.version_number, status: "RENDERING", startedAt: now, completedAt: null, outputPath: null, durationMs: null, errorMessage: null, musicPath: musicPath ?? null, createdAt: now };
+      database.prepare(`INSERT INTO render_versions (id, project_id, version_number, status, started_at, music_path, created_at)
+        VALUES (@id, @projectId, @versionNumber, @status, @startedAt, @musicPath, @createdAt)`).run(render);
+      database.prepare("UPDATE projects SET status = 'RENDERING', updated_at = ? WHERE id = ?").run(now, projectId);
+      return render;
+    },
+    updateRenderVersion(renderId: string, input: Partial<Pick<RenderVersion, "status" | "completedAt" | "outputPath" | "durationMs" | "errorMessage">>): RenderVersion | undefined {
+      const current = database.prepare("SELECT * FROM render_versions WHERE id = ?").get(renderId) as RenderRow | undefined; if (!current) return undefined;
+      const updated = { ...renderFromRow(current), ...input };
+      database.prepare(`UPDATE render_versions SET status = @status, completed_at = @completedAt, output_path = @outputPath, duration_ms = @durationMs, error_message = @errorMessage WHERE id = @id`).run(updated);
+      if (updated.status === "COMPLETE" || updated.status === "FAILED") database.prepare("UPDATE projects SET status = ?, final_video_path = COALESCE(?, final_video_path), updated_at = ? WHERE id = ?").run(updated.status === "COMPLETE" ? "COMPLETE" : "FAILED", updated.outputPath, new Date().toISOString(), updated.projectId);
+      return renderFromRow(database.prepare("SELECT * FROM render_versions WHERE id = ?").get(renderId) as RenderRow);
+    },
+    listRenderVersions(projectId: string): RenderVersion[] { return (database.prepare("SELECT * FROM render_versions WHERE project_id = ? ORDER BY version_number DESC").all(projectId) as RenderRow[]).map(renderFromRow); },
+    getLatestRenderVersion(projectId: string): RenderVersion | undefined { const row = database.prepare("SELECT * FROM render_versions WHERE project_id = ? ORDER BY version_number DESC LIMIT 1").get(projectId) as RenderRow | undefined; return row && renderFromRow(row); },
   };
 }

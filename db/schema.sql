@@ -56,3 +56,20 @@ CREATE TABLE IF NOT EXISTS scene_versions (
 
 CREATE INDEX IF NOT EXISTS scenes_project_id_idx ON scenes(project_id);
 CREATE INDEX IF NOT EXISTS scene_versions_scene_id_idx ON scene_versions(scene_id);
+
+CREATE TABLE IF NOT EXISTS render_versions (
+  id TEXT PRIMARY KEY,
+  project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
+  version_number INTEGER NOT NULL,
+  status TEXT NOT NULL DEFAULT 'NOT_READY',
+  started_at TEXT,
+  completed_at TEXT,
+  output_path TEXT,
+  duration_ms INTEGER,
+  error_message TEXT,
+  music_path TEXT,
+  created_at TEXT NOT NULL,
+  UNIQUE(project_id, version_number)
+);
+
+CREATE INDEX IF NOT EXISTS render_versions_project_id_idx ON render_versions(project_id);

@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/**/*.test.ts",
     "seed": "tsx scripts/seed-demo.ts",
-    "tts:smoke": "tsx scripts/tts-smoke.ts"
+    "tts:smoke": "tsx scripts/tts-smoke.ts",
+    "render:smoke": "tsx scripts/render-smoke.ts"
   },
   "dependencies": {
     "better-sqlite3": "^12.8.0",

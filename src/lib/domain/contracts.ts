@@ -91,6 +91,12 @@ export const generateVideoSchema = z.object({
 export const rejectSceneVersionSchema = z.object({
   reason: z.string().trim().min(1).max(2_000).optional(),
 });
+export const renderTrailerSchema = z.object({
+  subtitles: z.boolean().optional().default(false),
+  title: z.string().trim().min(1).max(160).optional(),
+  cta: z.string().trim().min(1).max(160).optional().default("Listen now on Pocket FM"),
+  musicPath: z.string().trim().min(1).max(1_000).nullable().optional(),
+});
 
 export type ProjectStatus = z.infer<typeof projectStatusSchema>;
 export type SceneStatus = z.infer<typeof sceneStatusSchema>;
