@@ -18,15 +18,40 @@ function settings(env: NodeJS.ProcessEnv = process.env): GeminiSettings {
 export class GeminiTtsProvider implements TtsProvider {
   async synthesize(input: TtsRequest): Promise<TtsResult> {
     const config = settings();
+    const textPrompt = `Perform this trailer narration in a high-energy and theatrical tone, with fast pacing and dramatic, suspenseful beats before reveals. Read the text naturally and expressively:\n\nNARRATION:\n${input.exactText}`;
     const response = await fetch(`${config.endpoint}/${encodeURIComponent(config.model)}:generateContent?key=${encodeURIComponent(config.apiKey)}`, {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: `${input.performancePrompt}\n\nNARRATION TEXT:\n${input.exactText}` }] }], generationConfig: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: config.voice } } } } }),
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ role: "user", parts: [{ text: textPrompt }] }],
+        generationConfig: {
+          responseModalities: ["AUDIO"],
+          speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: config.voice } } },
+        },
+      }),
     });
-    if (!response.ok) throw new Error(`Gemini TTS failed: ${response.status} ${await response.text()}`);
-    const body = await response.json() as { candidates?: Array<{ content?: { parts?: Array<{ inlineData?: { data?: string; mimeType?: string } }> } }> };
-    const inline = body.candidates?.[0]?.content?.parts?.find((part) => part.inlineData?.data)?.inlineData;
-    if (!inline?.data) throw new Error("Gemini TTS response did not contain audio data.");
-    const audio = Buffer.from(inline.data, "base64"); const sampleRate = Number(inline.mimeType?.match(/rate=(\d+)/i)?.[1] ?? 24_000);
+    if (!response.ok) throw new Error(`Gemini TTS failed (${response.status}): ${await response.text()}`);
+    const body = (await response.json()) as {
+      candidates?: Array<{
+        finishReason?: string;
+        content?: {
+          parts?: Array<{
+            text?: string;
+            inlineData?: { data?: string; mimeType?: string };
+          }>;
+        };
+      }>;
+    };
+    const candidate = body.candidates?.[0];
+    const inline = candidate?.content?.parts?.find((part) => part.inlineData?.data)?.inlineData;
+    if (!inline?.data) {
+      const textPart = candidate?.content?.parts?.find((part) => part.text)?.text;
+      const reason = candidate?.finishReason ? ` (finish reason: ${candidate.finishReason})` : "";
+      const textSnippet = textPart ? `: "${textPart.trim().slice(0, 150)}"` : "";
+      throw new Error(`Gemini TTS response did not contain audio data${reason}${textSnippet}`);
+    }
+    const audio = Buffer.from(inline.data, "base64");
+    const sampleRate = Number(inline.mimeType?.match(/rate=(\d+)/i)?.[1] ?? 24_000);
     await fs.mkdir(path.dirname(input.outputPath), { recursive: true });
     await fs.writeFile(input.outputPath, /audio\/L16/i.test(inline.mimeType ?? "") ? pcm16ToWav(audio, sampleRate) : audio);
     return { provider: "gemini", model: config.model, audioPath: input.outputPath };

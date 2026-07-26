@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { AudioVersion, Scene } from "@/lib/db/repositories";
 import type { VoiceBible } from "@/lib/domain/contracts";
@@ -124,22 +124,27 @@ export function AudioVersionReview({
 }) {
   if (!version) return <section className="audio-version-review"><p>Select an audio version to review it here.</p></section>;
   const current = version.scriptHash === currentScriptHash;
+  const isSelected = version.status === "SELECTED";
+  const isApproved = version.status === "APPROVED";
+
+  const providerLabel = version.provider === "gemini" ? "Google TTS (Gemini)" : version.provider === "elevenlabs" ? "ElevenLabs" : "ElevenLabs / Google TTS";
+
   return (
     <section className="audio-version-review">
       <div className="section-heading">
         <div>
-          <p className="eyebrow">Current selected version</p>
+          <p className="eyebrow">Current review version</p>
           <h3>Version {version.versionNumber}</h3>
         </div>
-        <span className={`status-badge ${current ? version.status === "APPROVED" ? "status-approved" : "status-generated" : "status-rejected"}`}>
+        <span className={`status-badge ${current ? isApproved ? "status-approved" : isSelected ? "status-approved" : "status-generated" : "status-rejected"}`}>
           {current ? version.status === "READY" ? "Generated" : version.status[0] + version.status.slice(1).toLowerCase() : "Outdated Script"}
         </span>
       </div>
       <audio controls src={`/api/audio-versions/${version.id}`} />
       <dl className="audio-version-metadata">
         <div><dt>Generated</dt><dd>{stamp(version.createdAt)}</dd></div>
-        <div><dt>Provider</dt><dd>ElevenLabs</dd></div>
-        <div><dt>Model</dt><dd>V3 Bilingual</dd></div>
+        <div><dt>Provider</dt><dd>{providerLabel}</dd></div>
+        <div><dt>Model</dt><dd>{version.model || "V3 Bilingual"}</dd></div>
         <div><dt>Voice</dt><dd>Karthik</dd></div>
         <div><dt>Script</dt><dd>{current ? "Current script" : "Older script"}</dd></div>
         <div><dt>Duration</dt><dd>{(version.durationMs / 1000).toFixed(1)} sec</dd></div>
@@ -151,10 +156,18 @@ export function AudioVersionReview({
           </button>
         ) : <div />}
         <div className="right-approve-reject-group">
-          <button onClick={() => onAction("approve")} disabled={working || !current || version.status === "REJECTED"}>
+          <button
+            type="button"
+            className="secondary"
+            onClick={() => onAction("select")}
+            disabled={working || isSelected || isApproved}
+          >
+            {isSelected ? "Selected" : "Select Version"}
+          </button>
+          <button onClick={() => onAction("approve")} disabled={working || !current || isApproved}>
             Approve
           </button>
-          <button className="danger" onClick={() => onAction("reject")} disabled={working || version.status === "APPROVED"}>
+          <button className="danger" onClick={() => onAction("reject")} disabled={working || isApproved}>
             Reject
           </button>
         </div>
@@ -171,6 +184,14 @@ function VoiceSceneCard({ scene, versions }: { scene: Scene; versions: AudioVers
 
   const initial = scene.selectedAudioVersionId ?? versions.find((version) => version.status === "APPROVED")?.id ?? versions.at(-1)?.id;
   const [selectedId, setSelectedId] = useState<string | undefined>(initial);
+
+  useEffect(() => {
+    const active = scene.selectedAudioVersionId ?? versions.find((version) => version.status === "APPROVED")?.id ?? versions.at(-1)?.id;
+    if (active && (!selectedId || !versions.some((v) => v.id === selectedId))) {
+      setSelectedId(active);
+    }
+  }, [scene.selectedAudioVersionId, versions, selectedId]);
+
   const selected = versions.find((version) => version.id === selectedId);
 
   async function request(url: string, init: RequestInit) {
@@ -199,18 +220,30 @@ function VoiceSceneCard({ scene, versions }: { scene: Scene; versions: AudioVers
           <p className="eyebrow">Scene {String(scene.sceneNumber).padStart(2, "0")}</p>
           <h2>{scene.emotion ?? "Narration"}</h2>
         </div>
-        <button
-          onClick={() =>
-            void request(`/api/scenes/${scene.id}/tts`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ quality: "preview" }),
-            })
-          }
-          disabled={working}
-        >
-          {working ? "Generating…" : versions.length ? "Generate New Audio" : "Generate Audio"}
-        </button>
+        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          {!isEditingScript && (
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => setIsEditingScript(true)}
+              disabled={working}
+            >
+              Edit Script
+            </button>
+          )}
+          <button
+            onClick={() =>
+              void request(`/api/scenes/${scene.id}/tts`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ quality: "preview" }),
+              })
+            }
+            disabled={working}
+          >
+            {working ? "Generating…" : versions.length ? "Generate New Audio" : "Generate Audio"}
+          </button>
+        </div>
       </div>
       <NarrationScriptEditor
         scene={scene}
@@ -246,7 +279,7 @@ export function VoiceSceneCards({ scenes, audioVersions, voiceBible }: Props) {
         <section className="voice-direction">
           <p className="eyebrow">Voice Bible</p>
           <h2>Karthik</h2>
-          <p>{voiceBible.voiceStyle} · {voiceBible.languageCode} · Eleven Labs</p>
+          <p>{voiceBible.voiceStyle} · {voiceBible.languageCode} · ElevenLabs / Google TTS</p>
         </section>
       )}
       {scenes.map((scene) => (

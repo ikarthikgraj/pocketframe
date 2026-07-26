@@ -32,7 +32,9 @@ export async function POST(request: Request, { params }: Context) {
       return { sceneId: scene.id, sceneNumber: scene.sceneNumber, exactText: scene.exactText, videoPath: video.videoPath, audioPath: audio.audioPath, audioDurationMs: audio.durationMs, targetDurationMs: scene.targetVideoDurationMs ?? audio.durationMs + 1200 };
     });
     const tagline = project.productionBible?.hook.text ?? project.productionBible?.premise.text ?? project.genre;
-    const result = await stitchTrailer({ projectId, renderVersion: render.versionNumber, title: parsed.data.title ?? project.title, tagline, cta: parsed.data.cta, scenes: approved, subtitles: parsed.data.subtitles, musicPath, onStage: async (currentStage) => { repo.updateRenderVersion(render.id, { currentStage }); } });
+    const activeReference = project.references.find((r) => r.active !== false) ?? project.references[0];
+    const referenceImagePath = activeReference?.localPath ?? null;
+    const result = await stitchTrailer({ projectId, renderVersion: render.versionNumber, title: parsed.data.title ?? project.title, tagline, cta: parsed.data.cta, scenes: approved, subtitles: parsed.data.subtitles, musicPath, referenceImagePath, onStage: async (currentStage) => { repo.updateRenderVersion(render.id, { currentStage }); } });
     const complete = repo.updateRenderVersion(render.id, { status: "COMPLETE", currentStage: 8, completedAt: new Date().toISOString(), outputPath: result.outputPath, durationMs: result.durationMs });
     return NextResponse.json({ projectId, render: complete, mockFallback: result.mockFallback }, { status: 201 });
   } catch (error) {

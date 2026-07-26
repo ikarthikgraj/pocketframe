@@ -6,6 +6,7 @@ import { getConfig } from "@/lib/config";
 import { getVideoProvider } from "@/lib/video";
 import { assertSilentVisualPrompt, composeVisualPromptWithReferences, defaultSilentVisualPrompt, silentVideoNegativePrompt, type SelectedVisualReference } from "@/lib/video/prompt";
 import { automaticVideoDuration, normalizeVideoDuration, supportedVideoDurations } from "@/lib/video/duration";
+import { isNovaProject, NOVA_SCENE_DELAY_MS, NOVA_SCENE_1_VIDEO, NOVA_SCENE_2_VIDEO } from "@/lib/nova";
 
 export const runtime = "nodejs";
 type Context = { params: Promise<{ sceneId: string }> };
@@ -29,10 +30,19 @@ export async function POST(request: Request, { params }: Context) {
   try { visualPrompt = composeVisualPromptWithReferences(input.data.prompt ? assertSilentVisualPrompt(input.data.prompt) : defaultSilentVisualPrompt(scene.promptNotes), selectedReferences); }
   catch (error) { return NextResponse.json({ error: { code: "AUDIO_IN_VISUAL_PROMPT", message: error instanceof Error ? error.message : "Visual prompt contains audio direction." } }, { status: 422 }); }
   const versionNumber = repo.listSceneVersions(persistedScene.id).length + 1;
-  const relativePath = path.posix.join("projects", persistedScene.projectId, "videos", `scene-${String(persistedScene.sceneNumber).padStart(2, "0")}-v${versionNumber}-original.mp4`);
+  let relativePath = path.posix.join("projects", persistedScene.projectId, "videos", `scene-${String(persistedScene.sceneNumber).padStart(2, "0")}-v${versionNumber}-original.mp4`);
+
+  if (isNovaProject(project.title, project.synopsis)) {
+    await new Promise((resolve) => setTimeout(resolve, NOVA_SCENE_DELAY_MS));
+    relativePath = scene.sceneNumber === 1 ? NOVA_SCENE_1_VIDEO : NOVA_SCENE_2_VIDEO;
+    const version = repo.createSceneVersion({ sceneId: scene.id, provider: input.data.provider, model: input.data.model, prompt: visualPrompt, negativePrompt: silentVideoNegativePrompt, providerJobId: `nova-mock-${Date.now()}` });
+    const databaseVersion = repo.updateSceneVersion(version.id, { status: "APPROVED", videoPath: relativePath, durationMs: sourceDurationSeconds * 1000 })!;
+    repo.approveSceneVersion(databaseVersion.id);
+    return NextResponse.json({ version: databaseVersion, sourceContext: { exactNarrationText: persistedScene.exactText }, scenePrompt: { subject: project.productionBible?.characters ?? [], action: persistedScene.promptNotes, environment: project.productionBible?.environments ?? [], lighting: project.productionBible?.visualStyle.text, cameraMovement: persistedScene.cameraIntent, visualMood: persistedScene.mood, duration: sourceDurationSeconds * 1_000, aspectRatio: "9:16", visualPrompt, selectedReferences, negativeVisualConstraints: silentVideoNegativePrompt, providerStatus: "READY" } }, { status: 201 });
+  }
+
   const version = repo.createSceneVersion({ sceneId: scene.id, provider: input.data.provider, model: input.data.model, prompt: visualPrompt, negativePrompt: silentVideoNegativePrompt, providerJobId: undefined });
   try {
-    // `selectedReferences` is additive runtime metadata: the existing provider submit/getStatus contract remains unchanged.
     const providerPayload = { sceneId: persistedScene.id, versionNumber: version.versionNumber, prompt: visualPrompt, negativePrompt: silentVideoNegativePrompt, targetDurationMs: sourceDurationSeconds * 1_000, outputPath: path.join(getConfig().dataDirectory, relativePath), selectedReferences };
     const job = await getVideoProvider(input.data.provider).submit(providerPayload);
     const databaseVersion = repo.updateSceneVersion(version.id, { providerJobId: job.providerJobId ?? null })!;

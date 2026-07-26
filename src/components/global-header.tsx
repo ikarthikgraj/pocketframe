@@ -30,7 +30,7 @@ export function GlobalHeader({ current }: GlobalHeaderProps) {
   return (
     <header className="global-header">
       <Link className="brand" href="/" aria-label="Go to PocketFrame home">
-        <span className="brand-mark">PF</span>
+        <span className="brand-mark"><img src="/pocketframelogo.png" alt="PocketFrame Logo" width="38" height="38" /></span>
         <span>PocketFrame <small>AI TRAILER STUDIO</small></span>
       </Link>
       <div className="header-right-actions">

@@ -14,10 +14,11 @@ test("genre and language selects include required choices and Other", () => {
   assert.deepEqual(LANGUAGES, ["English", "Hindi", "Hinglish", "Tamil", "Telugu", "Kannada", "Malayalam", "Bengali", "Marathi", "Punjabi", "Gujarati", "Urdu", "Other"]);
 });
 
-test("visual prompts reject audio instructions while exact narration remains unconstrained", () => {
+test("visual prompts accept all user prompts and instructions without validation blocking", () => {
   const forbidden = ["narration", "narrator", "voice-over", "voiceover", "dialogue", "says", "speaking", "soundtrack", "music", "sound effect", "audio", "we hear"];
-  for (const word of forbidden) assert.throws(() => assertSilentVisualPrompt(`A cinematic scene where ${word} is present.`));
+  for (const word of forbidden) assert.equal(assertSilentVisualPrompt(`A cinematic scene where ${word} is present.`), `A cinematic scene where ${word} is present.`);
   assert.equal(assertSilentVisualPrompt("A lone figure crosses a rain-soaked station platform, slow push-in, cool practical lighting."), "A lone figure crosses a rain-soaked station platform, slow push-in, cool practical lighting.");
+  assert.equal(assertSilentVisualPrompt("Cinematic contrast, anamorphic highlights.\n\nNEGATIVE CONSTRAINTS:\nNo voice-over, no narration, no music."), "Cinematic contrast, anamorphic highlights.\n\nNEGATIVE CONSTRAINTS:\nNo voice-over, no narration, no music.");
 });
 
 test("silent shots are approved before late-stage narration and initial planning creates no TTS", () => {

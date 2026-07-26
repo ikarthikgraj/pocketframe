@@ -4,7 +4,7 @@ import path from "node:path";
 import { getConfig } from "@/lib/config";
 
 export type ApprovedRenderScene = { sceneId: string; sceneNumber: number; exactText: string; videoPath: string; audioPath: string; audioDurationMs: number; targetDurationMs: number };
-export type RenderRequest = { projectId: string; renderVersion: number; title: string; tagline: string; cta: string; scenes: ApprovedRenderScene[]; subtitles: boolean; musicPath?: string | null; onStage?: (stage: number) => void | Promise<void> };
+export type RenderRequest = { projectId: string; renderVersion: number; title: string; tagline: string; cta: string; scenes: ApprovedRenderScene[]; subtitles: boolean; musicPath?: string | null; referenceImagePath?: string | null; onStage?: (stage: number) => void | Promise<void> };
 export type MediaProbe = { durationMs: number; videoCodec: string; audioCodec: string; width: number; height: number; fps: number; pixelFormat: string };
 
 const outputVideoFilter = "scale=1080:1920:force_original_aspect_ratio=increase,crop=1080:1920,fps=24,format=yuv420p";
@@ -49,6 +49,41 @@ export function assertTrailerFormat(probe: MediaProbe) {
 
 function srtTimestamp(ms: number) { const total = Math.max(0, Math.round(ms)); const hours = Math.floor(total / 3_600_000); const minutes = Math.floor((total % 3_600_000) / 60_000); const seconds = Math.floor((total % 60_000) / 1_000); return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")},${String(total % 1_000).padStart(3, "0")}`; }
 
+async function hasAudioStream(filePath: string): Promise<boolean> {
+  return new Promise((resolve) => {
+    const child = spawn("ffprobe", ["-v", "error", "-show_entries", "stream=codec_type", "-of", "json", filePath], { stdio: ["ignore", "pipe", "pipe"] });
+    let stdout = "";
+    child.stdout.on("data", (chunk) => { stdout += String(chunk); });
+    child.once("close", () => {
+      try {
+        const json = JSON.parse(stdout) as { streams?: Array<{ codec_type: string }> };
+        resolve(!!json.streams?.some((s) => s.codec_type === "audio"));
+      } catch {
+        resolve(false);
+      }
+    });
+    child.once("error", () => resolve(false));
+  });
+}
+
+async function getVideoDurationSeconds(filePath: string): Promise<number> {
+  return new Promise((resolve) => {
+    const child = spawn("ffprobe", ["-v", "error", "-show_entries", "format=duration", "-of", "json", filePath], { stdio: ["ignore", "pipe", "pipe"] });
+    let stdout = "";
+    child.stdout.on("data", (chunk) => { stdout += String(chunk); });
+    child.once("close", () => {
+      try {
+        const json = JSON.parse(stdout) as { format?: { duration?: string } };
+        const dur = Number(json.format?.duration);
+        resolve(Number.isFinite(dur) && dur > 0 ? dur : 5);
+      } catch {
+        resolve(5);
+      }
+    });
+    child.once("error", () => resolve(5));
+  });
+}
+
 export async function stitchTrailer(request: RenderRequest): Promise<{ outputPath: string; durationMs: number; mockFallback: boolean }> {
   const root = getConfig().dataDirectory; const renderDir = path.join(root, "projects", request.projectId, "renders"); const tempDir = path.join(root, "projects", request.projectId, "temp", `render-v${request.renderVersion}`);
   await fs.mkdir(renderDir, { recursive: true }); await fs.mkdir(tempDir, { recursive: true });
@@ -56,31 +91,114 @@ export async function stitchTrailer(request: RenderRequest): Promise<{ outputPat
   const outputPath = path.join(renderDir, `final-v${request.renderVersion}.mp4`); const normalized: string[] = [];
   try {
     await request.onStage?.(2);
+
+    // Single narration: use first scene's audio as the ONE narration track for the entire trailer.
+    const singleNarrationPath = path.join(root, scenes[0]!.audioPath);
+    const totalNarrationSec = scenes[0]!.audioDurationMs / 1000;
+    // Divide narration duration equally among all clips so visuals fill the WAV duration exactly.
+    const perClipSec = totalNarrationSec / scenes.length;
+    const perClipStr = perClipSec.toFixed(3);
+
     for (const scene of scenes) {
-      const output = path.join(tempDir, `scene-${String(scene.sceneNumber).padStart(2, "0")}.mp4`); const durationMs = sceneOutputDurationMs(scene); const duration = (durationMs / 1000).toFixed(3);
-      await request.onStage?.(3);
-      let filter = `${outputVideoFilter},tpad=stop_mode=clone:stop_duration=${duration},trim=duration=${duration},setpts=PTS-STARTPTS`;
-      if (request.subtitles) {
-        const subtitle = path.join(tempDir, `scene-${String(scene.sceneNumber).padStart(2, "0")}.srt`); await fs.writeFile(subtitle, `1\n00:00:00,000 --> ${srtTimestamp(scene.audioDurationMs)}\n${escapeSrt(scene.exactText)}\n`);
-        filter += `,subtitles=filename='${subtitle.replace(/\\/g, "\\\\").replace(/:/g, "\\:").replace(/'/g, "\\'")}'`;
+      const output = path.join(tempDir, `scene-${String(scene.sceneNumber).padStart(2, "0")}.mp4`);
+      const videoAbsPath = path.join(root, scene.videoPath);
+
+      const origVideoDurationSec = await getVideoDurationSeconds(videoAbsPath);
+      const clipHasAudio = await hasAudioStream(videoAbsPath);
+
+      // Speed-scale video to fit its allocated slot within the narration duration.
+      const ptsFactor = (perClipSec / Math.max(0.1, origVideoDurationSec)).toFixed(4);
+
+      let filterComplex = `[0:v]setpts=${ptsFactor}*PTS,${outputVideoFilter},trim=duration=${perClipStr},setpts=PTS-STARTPTS[video]`;
+
+      // Clip's original audio at 30 % volume (or silence if clip has no audio).
+      if (clipHasAudio) {
+        filterComplex += `;[0:a]volume=0.30,aresample=48000,apad=pad_dur=${perClipStr},atrim=duration=${perClipStr}[audio]`;
       }
-      await request.onStage?.(4); await request.onStage?.(5);
-      await run("ffmpeg", ["-y", "-i", path.join(root, scene.videoPath), "-i", path.join(root, scene.audioPath), "-filter_complex", `[0:v]${filter}[video];[1:a]apad=pad_dur=${duration}[audio]`, "-map", "[video]", "-map", "[audio]", "-t", duration, "-r", "24", "-c:v", "libx264", "-preset", "fast", "-pix_fmt", "yuv420p", "-c:a", "aac", "-movflags", "+faststart", output]);
+
+      await request.onStage?.(3); await request.onStage?.(4); await request.onStage?.(5);
+
+      const ffmpegArgs = ["-y", "-i", videoAbsPath];
+      if (!clipHasAudio) {
+        // Add a synthetic silent audio source so concat always has an audio stream.
+        ffmpegArgs.push("-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo");
+        filterComplex += `;[1:a]atrim=duration=${perClipStr}[audio]`;
+      }
+      ffmpegArgs.push(
+        "-filter_complex", filterComplex,
+        "-map", "[video]", "-map", "[audio]",
+        "-t", perClipStr, "-r", "24",
+        "-c:v", "libx264", "-preset", "fast", "-pix_fmt", "yuv420p",
+        "-c:a", "aac", "-movflags", "+faststart",
+        output
+      );
+      await run("ffmpeg", ffmpegArgs);
       normalized.push(output);
     }
-    const titleCard = path.join(tempDir, "title-card.mp4"); const cardImage = path.join(tempDir, "title-card.ppm"); await writeTitleCardImage(cardImage, [{ text: request.title, y: 730, scale: 10 }, { text: request.tagline, y: 940, scale: 5 }, { text: request.cta, y: 1140, scale: 5 }]);
-    await run("ffmpeg", ["-y", "-loop", "1", "-i", cardImage, "-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo", "-map", "0:v", "-map", "1:a", "-t", "3", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-r", "24", "-c:a", "aac", titleCard]);
+
+    // Title card (3 s silent reference card or fallback text card).
+    const titleCard = path.join(tempDir, "title-card.mp4");
+    let hasRefImage = false;
+    if (request.referenceImagePath) {
+      const refAbsPath = path.join(root, request.referenceImagePath);
+      try {
+        await fs.access(refAbsPath);
+        await run("ffmpeg", [
+          "-y",
+          "-loop", "1",
+          "-i", refAbsPath,
+          "-f", "lavfi",
+          "-i", "anullsrc=r=48000:cl=stereo",
+          "-vf", outputVideoFilter,
+          "-map", "0:v",
+          "-map", "1:a",
+          "-t", "3",
+          "-c:v", "libx264",
+          "-pix_fmt", "yuv420p",
+          "-r", "24",
+          "-c:a", "aac",
+          titleCard
+        ]);
+        hasRefImage = true;
+      } catch {
+        hasRefImage = false;
+      }
+    }
+    if (!hasRefImage) {
+      const cardImage = path.join(tempDir, "title-card.ppm");
+      await writeTitleCardImage(cardImage, [{ text: request.title, y: 730, scale: 10 }, { text: request.tagline, y: 940, scale: 5 }, { text: request.cta, y: 1140, scale: 5 }]);
+      await run("ffmpeg", ["-y", "-loop", "1", "-i", cardImage, "-f", "lavfi", "-i", "anullsrc=r=48000:cl=stereo", "-map", "0:v", "-map", "1:a", "-t", "3", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-r", "24", "-c:a", "aac", titleCard]);
+    };
+
+    // Concat all clip segments + title card.
     const manifest = path.join(tempDir, "concat.txt"); await fs.writeFile(manifest, [...normalized, titleCard].map((file) => `file '${file.replace(/'/g, "'\\''")}'`).join("\n")); const joined = path.join(tempDir, "joined.mp4");
     await run("ffmpeg", ["-y", "-f", "concat", "-safe", "0", "-i", manifest, "-c", "copy", joined]);
-    const expectedDurationMs = scenes.reduce((total, scene) => total + sceneOutputDurationMs(scene), 0) + 3_000;
+
+    const expectedDurationMs = Math.round(totalNarrationSec * 1000) + 3_000;
+    const expectedDurationStr = (expectedDurationMs / 1000).toFixed(3);
     await request.onStage?.(6); await request.onStage?.(7);
+
+    // Mix single narration (85 %) over clip audio (30 %), plus optional music.
+    const preNarration = path.join(tempDir, "pre-narration.mp4");
+    await run("ffmpeg", [
+      "-y", "-i", joined, "-i", singleNarrationPath,
+      "-filter_complex",
+      `[1:a]volume=0.85,aresample=48000,apad=pad_dur=${expectedDurationStr}[narr];[0:a][narr]amix=inputs=2:duration=first:dropout_transition=0[audio]`,
+      "-map", "0:v", "-map", "[audio]",
+      "-t", expectedDurationStr,
+      "-c:v", "copy", "-c:a", "aac", "-movflags", "+faststart",
+      preNarration
+    ]);
+
     if (request.musicPath) {
-      await run("ffmpeg", ["-y", "-i", joined, "-stream_loop", "-1", "-i", path.join(root, request.musicPath), "-filter_complex", `[1:a]volume=0.12,afade=t=in:st=0:d=1,afade=t=out:st=${Math.max(0, expectedDurationMs / 1000 - 1).toFixed(3)}:d=1[music];[0:a][music]amix=inputs=2:duration=first:dropout_transition=0[audio]`, "-map", "0:v", "-map", "[audio]", "-t", (expectedDurationMs / 1000).toFixed(3), "-c:v", "copy", "-c:a", "aac", "-movflags", "+faststart", outputPath]);
-    } else await run("ffmpeg", ["-y", "-i", joined, "-t", (expectedDurationMs / 1000).toFixed(3), "-c:v", "libx264", "-pix_fmt", "yuv420p", "-r", "24", "-c:a", "aac", "-movflags", "+faststart", outputPath]);
+      await run("ffmpeg", ["-y", "-i", preNarration, "-stream_loop", "-1", "-i", path.join(root, request.musicPath), "-filter_complex", `[1:a]volume=0.12,afade=t=in:st=0:d=1,afade=t=out:st=${Math.max(0, expectedDurationMs / 1000 - 1).toFixed(3)}:d=1[music];[0:a][music]amix=inputs=2:duration=first:dropout_transition=0[audio]`, "-map", "0:v", "-map", "[audio]", "-t", expectedDurationStr, "-c:v", "copy", "-c:a", "aac", "-movflags", "+faststart", outputPath]);
+    } else {
+      await run("ffmpeg", ["-y", "-i", preNarration, "-t", expectedDurationStr, "-c:v", "libx264", "-pix_fmt", "yuv420p", "-r", "24", "-c:a", "aac", "-movflags", "+faststart", outputPath]);
+    }
+
     await request.onStage?.(8); const probe = await probeMp4(outputPath); assertTrailerFormat(probe); return { outputPath: path.relative(root, outputPath), durationMs: probe.durationMs, mockFallback: false };
   } catch (error) {
     if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error;
-    // Safe offline fallback: preserve the approved source, never replace an existing final render.
     await fs.copyFile(path.join(root, scenes[0]!.videoPath), outputPath);
     return { outputPath: path.relative(root, outputPath), durationMs: sceneOutputDurationMs(scenes[0]!), mockFallback: true };
   } finally { await fs.rm(tempDir, { recursive: true, force: true }); }

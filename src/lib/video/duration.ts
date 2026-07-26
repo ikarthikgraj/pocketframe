@@ -1,4 +1,4 @@
-export const supportedVideoDurations = [4, 6, 8, 10, 12] as const;
+export const supportedVideoDurations = [4, 6, 8, 10, 12, 15] as const;
 
 /**
  * Converts user input and legacy values to the nearest configured duration.

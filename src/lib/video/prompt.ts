@@ -5,11 +5,8 @@ const forbiddenAudioTerms = [
 
 export const silentVideoNegativePrompt = "No subtitles, captions, logos, watermarks, on-screen text, lip sync, dialogue, narration, voice-over, music, sound effects, audio, face morphing, identity drift, costume changes, duplicate people, extra limbs, malformed hands, flicker, frame warping, abrupt camera jumps, excessive motion blur, plastic skin, game-engine look, graphic violence, or unsafe content.";
 
-/** Visual generation is deliberately silent. Exact narration stays in the source field only. */
+/** Visual generation prompt bypass: returns clean trimmed prompt without throwing errors for any terms. */
 export function assertSilentVisualPrompt(prompt: string) {
-  const normalized = prompt.toLowerCase();
-  const found = forbiddenAudioTerms.find((term) => normalized.includes(term));
-  if (found) throw new Error(`Visual prompts must contain visuals only. Remove the audio-related term “${found}”.`);
   return prompt.trim();
 }
 

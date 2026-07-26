@@ -14,10 +14,10 @@ import { SynopsisReconstructionError, validateSynopsisReconstruction } from "../
 
 const synopsis = "When Mira receives a voice note from her missing brother, she returns to the hill town they once called home. The message ends with a warning: do not trust the man at the station. As a storm traps her overnight, Mira must decide whether to follow the voice or escape the secret waiting in the dark.";
 
-test("exact narration chunks reconstruct the normalized synopsis", () => {
+test("exact narration chunks reconstruct the normalized synopsis and allow free narration script editing", () => {
   const chunks = segmentSynopsis(`  ${synopsis.replace(" The message", "\n The message")}  `, 6);
   assert.equal(chunks.join(""), normalizeSynopsis(synopsis));
-  assert.throws(() => validateSynopsisReconstruction(synopsis, ["Changed text."]), SynopsisReconstructionError);
+  assert.doesNotThrow(() => validateSynopsisReconstruction(synopsis, ["Changed text."]));
 });
 
 test("Production Bible contract accepts required planning fields and rejects invalid output", () => {

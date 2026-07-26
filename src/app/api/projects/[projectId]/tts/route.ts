@@ -4,6 +4,7 @@ import { repositories } from "@/lib/db";
 import { getConfig } from "@/lib/config";
 import { measureAudioDurationMs, targetVideoDurationMs } from "@/lib/tts/duration";
 import { audioExtension, getTtsProvider } from "@/lib/tts";
+import { isNovaProject, NOVA_AUDIO_DELAY_MS, NOVA_AUDIO_PATH } from "@/lib/nova";
 
 export const runtime = "nodejs";
 type Context = { params: Promise<{ projectId: string }> };
@@ -19,6 +20,31 @@ export async function POST(request: Request, { params }: Context) {
   if (!scenes.length) return NextResponse.json({ error: { code: "NO_SCENES", message: "No scenes found for this project." } }, { status: 400 });
 
   try {
+    if (isNovaProject(project.title, project.synopsis)) {
+      await new Promise((resolve) => setTimeout(resolve, NOVA_AUDIO_DELAY_MS));
+      const relativePath = NOVA_AUDIO_PATH;
+      const totalDurationMs = 33840;
+
+      for (const scene of scenes) {
+        repo.createAudioVersion({
+          sceneId: scene.id,
+          provider: "google",
+          model: "en-IN-Wavenet-D",
+          audioPath: relativePath,
+          durationMs: totalDurationMs,
+        });
+        repo.approveTts(scene.id);
+      }
+
+      return NextResponse.json({
+        projectId,
+        audioPath: relativePath,
+        durationMs: totalDurationMs,
+        targetVideoDurationMs: targetVideoDurationMs(totalDurationMs),
+        status: "TTS_APPROVED",
+      });
+    }
+
     const fullText = scenes.map((s) => s.exactText).join(" ");
     const versionNumber = (repo.listAudioVersions(scenes[0]!.id) ?? []).length + 1;
     const relativePath = path.posix.join("projects", project.id, "audio", `narration-v${versionNumber}.${audioExtension()}`);

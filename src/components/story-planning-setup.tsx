@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { ProductionBible } from "@/lib/domain/contracts";
 import type { Scene } from "@/lib/db/repositories";
-import { BeginnerHint } from "@/components/production-experience";
 import { ProjectReferences } from "@/components/project-references";
 import type { ProjectReference } from "@/lib/db/repositories";
 
@@ -22,6 +21,9 @@ export function StoryPlanningSetup({ projectId, project, productionBible, scenes
   const router = useRouter();
   const [working, setWorking] = useState(false);
   const [error, setError] = useState<string>();
+  const [isEditingSynopsis, setIsEditingSynopsis] = useState(false);
+  const [synopsisText, setSynopsisText] = useState(project.synopsis);
+  const [savingSynopsis, setSavingSynopsis] = useState(false);
 
   async function action(path: string) {
     setWorking(true);
@@ -37,6 +39,22 @@ export function StoryPlanningSetup({ projectId, project, productionBible, scenes
     router.refresh();
   }
 
+  async function saveSynopsis() {
+    if (!synopsisText.trim()) return setError("Synopsis cannot be empty.");
+    setSavingSynopsis(true);
+    setError(undefined);
+    const response = await fetch(`/api/projects/${projectId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ synopsis: synopsisText }),
+    });
+    const data = await response.json();
+    setSavingSynopsis(false);
+    if (!response.ok) return setError(data.error?.message ?? "Could not save synopsis.");
+    setIsEditingSynopsis(false);
+    router.refresh();
+  }
+
   return (
     <section id="story" className="planning">
       {error && <p className="error" role="alert" style={{ marginBottom: 16 }}>{error}</p>}
@@ -47,13 +65,62 @@ export function StoryPlanningSetup({ projectId, project, productionBible, scenes
           <div>
             <h2>Original Source Synopsis</h2>
           </div>
-          {!productionBible && (
-            <button onClick={() => action("analyze")} disabled={working || status === "ANALYZING"}>
-              {working || status === "ANALYZING" ? "Analyzing synopsis…" : "Generate Production Bible"}
-            </button>
-          )}
+          <div className="actions">
+            {!isEditingSynopsis && (
+              <button
+                type="button"
+                className="button secondary"
+                onClick={() => {
+                  setSynopsisText(project.synopsis);
+                  setIsEditingSynopsis(true);
+                }}
+                disabled={working || savingSynopsis}
+              >
+                Edit Synopsis
+              </button>
+            )}
+            {!productionBible && !isEditingSynopsis && (
+              <button onClick={() => action("analyze")} disabled={working || status === "ANALYZING"}>
+                {working || status === "ANALYZING" ? "Analyzing synopsis…" : "Generate Production Bible"}
+              </button>
+            )}
+            {productionBible && !isEditingSynopsis && (
+              <button onClick={() => action("analyze")} disabled={working || status === "ANALYZING"} className="button secondary">
+                {working || status === "ANALYZING" ? "Re-analyzing…" : "Re-generate Bible"}
+              </button>
+            )}
+          </div>
         </div>
-        <p className="synopsis">{project.synopsis}</p>
+
+        {isEditingSynopsis ? (
+          <div className="synopsis-edit-box">
+            <textarea
+              className="synopsis-edit-textarea"
+              value={synopsisText}
+              onChange={(e) => setSynopsisText(e.target.value)}
+              rows={5}
+              placeholder="Enter audio series or trailer synopsis..."
+            />
+            <div className="synopsis-edit-actions">
+              <button type="button" className="button primary" onClick={saveSynopsis} disabled={savingSynopsis}>
+                {savingSynopsis ? "Saving…" : "Save Synopsis"}
+              </button>
+              <button
+                type="button"
+                className="button secondary"
+                onClick={() => {
+                  setSynopsisText(project.synopsis);
+                  setIsEditingSynopsis(false);
+                }}
+                disabled={savingSynopsis}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        ) : (
+          <p className="synopsis">{project.synopsis}</p>
+        )}
       </section>
 
       <ProjectReferences projectId={projectId} references={project.references} />

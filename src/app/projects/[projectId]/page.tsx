@@ -30,13 +30,14 @@ export default async function ProjectWorkspace({ params }: { params: Promise<{ p
   const story = <StoryPlanningSetup projectId={project.id} project={{ title: project.title, synopsis: project.synopsis, genre: project.genre, languageCode: project.languageCode, references: project.references }} productionBible={project.productionBible} scenes={scenes} status={project.status} />;
   return (
     <div className="workspace-shell">
-      <header className="app-header"><Link className="brand" href="/" aria-label="Go to PocketFrame home"><span className="brand-mark">PF</span><span>PocketFrame <small>AI TRAILER STUDIO</small></span></Link></header>
+      <header className="app-header"><Link className="brand" href="/" aria-label="Go to PocketFrame home"><span className="brand-mark"><img src="/pocketframelogo.png" alt="PocketFrame Logo" width="38" height="38" /></span><span>PocketFrame <small>AI TRAILER STUDIO</small></span></Link></header>
 
       <main className="workspace-content">
         <WorkspaceTabs
           initialTab={initialTab}
           overview={
             <ProjectWorkspaceHeader
+              projectId={project.id}
               title={project.title}
               genre={project.genre}
               language={project.languageCode}

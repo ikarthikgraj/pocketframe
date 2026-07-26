@@ -196,7 +196,13 @@ function StudioCanvas({
         {/* Left Column: 9:16 Video Player */}
         <div className="canvas-preview-column">
           <div className="video-preview-frame">
-            {selectedVersion?.videoPath ? (
+            {Boolean(working) ? (
+              <div className="canvas-generating-state">
+                <div className="generating-pulse-ring" />
+                <p className="generating-text">Generating visual shot...</p>
+                <span className="generating-timer">Processing high-fidelity motion (~1 min)</span>
+              </div>
+            ) : selectedVersion?.videoPath ? (
               <video controls muted preload="metadata" src={`/api/scene-versions/${selectedVersion.id}/video`} key={selectedVersion.id} />
             ) : (
               <div className="canvas-placeholder">
@@ -215,7 +221,7 @@ function StudioCanvas({
           <div className="studio-settings-grid">
             <VideoModelSelect value={model} onChange={setModel} disabled={working} />
             <AspectRatioSelect value={aspectRatio} onChange={setAspectRatio} disabled={working} />
-            <VideoDurationSlider value={duration} onChange={(value) => void updateDuration(value)} disabled={working} />
+            <VideoDurationSlider value={duration} onChange={(value) => void updateDuration(value)} disabled={working} model={model} />
           </div>
 
           <SceneReferenceSelector sceneId={scene.id} projectId={projectId} references={references} selectedReferenceIds={scene.selectedReferenceIds} disabled={working} onError={onError} />
