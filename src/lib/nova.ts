@@ -244,7 +244,45 @@ export const DRAMA_SCENES: PlannedScene[] = [
     mood: "Tense, intimate",
     cameraIntent: "Deliberate framing push-in",
     estimatedDurationSeconds: 17,
-    promptNotes: "Use the approved visual style and keep the action focused on one readable story beat.",
+    promptNotes: `Use the provided poster as the main and strict reference image for character identity and visual tone.
+
+Create a 15-second fast-paced cinematic Hindi drama-thriller promo in 16:9, photorealistic live-action style.
+
+Character identity lock:
+- Abhinav is the man from the poster: Indian male, strong face, trimmed beard, blue suit, serious and intense personality.
+- Ishita is the woman from the poster: Indian female, elegant, black blazer, white shirt, emotionally guarded and sharp.
+Preserve their facial identity, hairstyle, age, skin tone, and overall appearance across all shots.
+
+No spoken dialogue. This video is visuals only. Voice-over will be added separately.
+
+Tone:
+Corporate thriller, emotional drama, rich family legacy, mystery, betrayal, hidden identity. Fast trailer pacing, sharp cuts, premium OTT feel.
+
+Shot structure:
+
+[00.0–02.5s]
+Show Abhinav in a modest sales office setting, standing alone, tired and emotionally burdened. Quick close-up of his face, then a wider shot showing him as a simple working man. Natural office lighting, realistic mood.
+
+[02.5–05.0s]
+Fast emotional montage: Abhinav’s mother is weak and ill in bed, medicine bills on a table, Abhinav silently worried and helpless. Close-up on his tense hands and troubled face.
+
+[05.0–07.0s]
+Show domestic humiliation: Ishita stands distant and cold in a modern home interior while Abhinav looks emotionally cornered. Add subtle tension, no shouting, just visible rejection and discomfort.
+
+[07.0–09.5s]
+A sudden mystery shift: show a newspaper headline, files, and a photo of billionaire Randhir Raichand. Rapid cuts of luxury office towers, a grand corporate boardroom, and whispers of a missing tycoon. Suspense builds sharply.
+
+[09.5–12.0s]
+Reveal Abhinav discovering the shocking truth — he is Randhir Raichand’s biological son and heir. Show him opening a confidential file, shocked eyes, dramatic push-in camera, city skyline behind him.
+
+[12.0–15.0s]
+End with Abhinav stepping into a powerful corporate office in his blue suit, now stronger and more determined. The camera circles him as he looks out over a giant business empire. End on a powerful intense close-up for continuation.
+
+Visual style:
+High-end cinematic trailer, fast-paced editing, dramatic corporate interiors, modern city skyline, moody lighting, realistic Indian characters, luxury business world, emotional tension, suspenseful framing, shallow depth of field, clean camera motion, premium streaming-series aesthetic.
+
+Negative constraints:
+No subtitles, no lip-sync, no random text, no extra characters dominating the frame, no face distortion, no character inconsistency, no cartoon style, no extra limbs, no shaky camera, no logo overlays.`,
     intensity: 8,
     pace: "Measured",
     energy: "High",
@@ -258,7 +296,47 @@ export const DRAMA_SCENES: PlannedScene[] = [
     mood: "Reflective, dramatic",
     cameraIntent: "Wide cinematic tracking shot",
     estimatedDurationSeconds: 17,
-    promptNotes: "Dramatic urban scene with cinematic contrast and high tension.",
+    promptNotes: `Use the provided poster as the strict character reference image again.
+
+Create the second connected 15-second segment of the same fast-paced cinematic Hindi corporate thriller promo in 16:9, photorealistic live-action style.
+
+Character identity lock:
+- Abhinav is the same man from the poster in the blue suit.
+- Ishita is the same woman from the poster in the black blazer and white shirt.
+Preserve exact identity, face shape, hair, age, and styling continuity.
+
+No spoken dialogue. Visuals only. Voice-over will be added separately.
+
+Tone:
+High-stakes family empire thriller, secret identity, betrayal, scandal, emotional conflict, danger, hidden protection.
+
+Shot structure:
+
+[00.0–02.5s]
+Open with Abhinav inside a massive corporate office, looking over the empire he has inherited. Quick cuts of luxury boardroom tables, stock screens, confidential files, and suspicious faces watching him. Continuous slow push-in towards Abhinav’s face, subtle low camera angle, his eyes scanning the room with cold calculation.
+
+[02.5–05.0s]
+Show danger rising: shadowy enemies exchanging files in a dimly lit corridor, a close-up of a gloved hand sliding a USB drive across a table, a mysterious lab-like device with blinking LEDs, and a confidential blueprint marked "Project Phoenix" revealed. Tight framing, flickering fluorescent light, suspenseful silence broken by a single distant door slam.
+
+[05.0–07.5s]
+Show Ishita under pressure in her failing company — tense office atmosphere, empty cubicles, a single lamp lighting her desk, financial stress evident in her clenched jaw. Then show manipulated rumors and scandal spreading through phones, screens, and media whispers targeting Abhinav. POV shot of a news headline flashing on a phone screen, then zoom into Ishita’s worried eyes.
+
+[07.5–10.0s]
+Abhinav secretly protects Ishita without revealing his true wealth or power. Show him arranging security from a phone call in a parked black sedan, stopping a hidden threat by intercepting a delivery courier outside her office, and watching over her from a distance across a rainy street. He remains unseen by her. Reflections in glass, motion-blurred traffic.
+
+[10.0–12.5s]
+Strong emotional conflict: Ishita looks at Abhinav with doubt and mistrust across a crowded lobby. Abhinav looks back with pain, hiding the truth through a forced calm smile. Add one dramatic close-up of both characters facing opposite directions, separated by a glass partition, their reflections overlapping.
+
+[12.5–15.0s]
+End with a hero shot: Abhinav stands in the center of the Raichand empire, determined, dangerous, and calm, before a panoramic window overlooking the city at dusk. Ishita turns toward him from the lobby doorway as if sensing the truth. Finish with a dramatic title reveal:
+“THE RAICHANDS”
+bold cinematic title, metallic gold texture with a subtle scratch effect, centered, premium thriller feel, rising orchestral sting on reveal.
+
+Visual style:
+Premium OTT trailer, sleek corporate thriller, emotional intensity, rich interiors, moody office lighting, modern skyline, suspenseful editing, cinematic push-ins, dramatic contrast, luxury business family vibe, realistic Indian characters. Additional depth via selective focus and ambient occlusion.
+
+Negative constraints:
+No extra text except final title, no subtitles, no lip-sync, no poster layout, no goofy action, no face changes, no inconsistent wardrobe, no overacting, no cartoon look, no shaky camera, no watermark, no logo overlays.`,
     intensity: 9,
     pace: "Measured",
     energy: "High",
