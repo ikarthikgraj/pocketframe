@@ -1,7 +1,27 @@
 import Link from "next/link";
 import { StageStatus } from "@/components/production-experience";
-import type { ProductionStatus, RecommendedAction } from "@/lib/production-ux";
+import type { ProductionStatus } from "@/lib/production-ux";
 
-export function ProjectWorkspaceHeader({ title, genre, language, stage, progress, action }: { title: string; genre: string; language: string; stage: string; progress: number; action: RecommendedAction }) {
-  return <section className="project-workspace-header"><div className="workspace-header-top"><Link className="back-link" href="/projects">← Back to My Projects</Link><StageStatus status={stage as ProductionStatus} /></div><div className="workspace-header-content"><div><h1>{title}</h1><p className="workspace-meta"><span>{genre}</span><span>{language}</span><span>{stage}</span></p></div><div className="workspace-progress"><div><span>Overall progress</span><strong>{progress}%</strong></div><span className="compact-progress-bar"><i style={{ width: `${progress}%` }} /></span></div></div><div className="workspace-next-action"><div><span className="eyebrow">Next recommended action</span><strong>{action.title}</strong><p>{action.reason}</p></div><span>{action.buttonLabel}</span></div></section>;
+export function ProjectWorkspaceHeader({ title, genre, language, stage }: { title: string; genre: string; language: string; stage: string }) {
+  return (
+    <div className="workspace-title-header">
+      <Link className="back-link" href="/projects">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12" />
+          <polyline points="12 19 5 12 12 5" />
+        </svg>
+        Back to My Projects
+      </Link>
+      <div className="workspace-title-row">
+        <div className="title-with-meta">
+          <h1>{title}</h1>
+          <div className="title-tags">
+            <span className="genre-tag">{genre}</span>
+            <span className="lang-tag">{language}</span>
+          </div>
+        </div>
+        <StageStatus status={stage as ProductionStatus} />
+      </div>
+    </div>
+  );
 }

@@ -62,6 +62,10 @@ export function createRepositories(database: Database.Database) {
       const row = database.prepare("SELECT * FROM projects WHERE id = ?").get(id) as ProjectRow | undefined;
       return row && projectFromRow(row);
     },
+    deleteProject(id: string): boolean {
+      const result = database.prepare("DELETE FROM projects WHERE id = ?").run(id);
+      return result.changes > 0;
+    },
     addProjectReference(projectId: string, input: Omit<ProjectReference, "id" | "projectId" | "uploadedAt" | "source" | "active">): ProjectReference {
       const project = this.getProject(projectId);
       if (!project) throw new Error("Project not found.");

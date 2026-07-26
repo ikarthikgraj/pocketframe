@@ -55,7 +55,7 @@ test("only selected references become visual prompt continuity instructions", ()
 });
 
 test("duration selector is fixed, normalizes legacy values, and scene duration overrides auto", () => {
-  assert.deepEqual(supportedVideoDurations, [4, 6, 8]); assert.equal(normalizeVideoDuration(5, supportedVideoDurations), 4); assert.equal(normalizeVideoDuration(7.8, supportedVideoDurations), 8);
+  assert.deepEqual(supportedVideoDurations, [4, 6, 8, 10, 12]); assert.equal(normalizeVideoDuration(5, supportedVideoDurations), 4); assert.equal(normalizeVideoDuration(7.8, supportedVideoDurations), 8);
   const { database, repo, scene } = setup(); database.prepare("UPDATE scenes SET video_duration_seconds = 5 WHERE id = ?").run(scene.id);
   assert.equal(repo.getScene(scene.id)?.videoDurationSeconds, 4);
   repo.setSceneVideoDuration(scene.id, 8); assert.equal(repo.getScene(scene.id)?.videoDurationSeconds, 8);

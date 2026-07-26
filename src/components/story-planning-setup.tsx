@@ -39,15 +39,12 @@ export function StoryPlanningSetup({ projectId, project, productionBible, scenes
 
   return (
     <section id="story" className="planning">
-      <BeginnerHint>Review the character and environment details before moving to Voice.</BeginnerHint>
-
       {error && <p className="error" role="alert" style={{ marginBottom: 16 }}>{error}</p>}
 
       {/* Source Synopsis Card */}
       <section className="story-input-panel">
         <div className="section-heading">
           <div>
-            <p className="eyebrow">Story Input</p>
             <h2>Original Source Synopsis</h2>
           </div>
           {!productionBible && (
@@ -55,12 +52,6 @@ export function StoryPlanningSetup({ projectId, project, productionBible, scenes
               {working || status === "ANALYZING" ? "Analyzing synopsis…" : "Generate Production Bible"}
             </button>
           )}
-        </div>
-        <div className="story-input-meta">
-          <div><span className="field-label">Title</span><strong>{project.title}</strong></div>
-          <div><span className="field-label">Genre</span><strong>{project.genre}</strong></div>
-          <div><span className="field-label">Language</span><strong>{project.languageCode}</strong></div>
-          <div><span className="field-label">Trailer duration</span><strong>{productionBible ? `${productionBible.trailerDurationSeconds}s` : "30–40s target"}</strong></div>
         </div>
         <p className="synopsis">{project.synopsis}</p>
       </section>

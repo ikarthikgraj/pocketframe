@@ -34,7 +34,6 @@ export function WorkspaceTabs({ stages, initialTab, overview }: { stages: Stage[
               title={blocked ? stage.blockedMessage : undefined}
               onClick={() => setActiveTab(stage.name)}
             >
-              <WorkflowTabIcon stage={stage.name} state={state} />
               {stage.name}
             </button>
           );

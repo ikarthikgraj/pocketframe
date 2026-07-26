@@ -16,3 +16,12 @@ export async function PATCH(request: Request, { params }: Context) {
   const project = repositories().updateProject((await params).projectId, result.data);
   return project ? NextResponse.json({ project }) : NextResponse.json({ error: { code: "NOT_FOUND", message: "Project not found." } }, { status: 404 });
 }
+
+export async function DELETE(_: Request, { params }: Context) {
+  const projectId = (await params).projectId;
+  const deleted = repositories().deleteProject(projectId);
+  return deleted
+    ? NextResponse.json({ success: true, message: "Project deleted successfully" })
+    : NextResponse.json({ error: { code: "NOT_FOUND", message: "Project not found." } }, { status: 404 });
+}
+

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Scene, SceneVersion } from "@/lib/db/repositories";
 import type { ProjectReference } from "@/lib/db/repositories";
-import { BeginnerHint } from "@/components/production-experience";
+import { AspectRatioSelect, type AspectRatio } from "@/components/aspect-ratio-select";
 import { SceneReferenceSelector } from "@/components/scene-reference-selector";
 import { VideoDurationSlider } from "@/components/video-duration-slider";
 import { VideoModelSelect } from "@/components/video-model-select";
@@ -74,11 +74,8 @@ export function ShotSceneCards({ projectId, references, scenes, versions }: Prop
 
   return (
     <section id="shots" className="voice-section fade-in">
-      <BeginnerHint>Use only the references needed for this shot. Narration is added during Final Cut.</BeginnerHint>
-
-      <div className="section-heading" style={{ marginBottom: 12 }}>
+      <div className="section-heading" style={{ marginBottom: 14 }}>
         <div>
-          <p className="eyebrow">Shots workspace</p>
           <h2>Visual Shot Review</h2>
         </div>
         <span className="status-badge status-neutral">
@@ -151,18 +148,19 @@ function StudioCanvas({
   onError: (message: string | undefined) => void;
   onAction: (url: string, init: RequestInit, id: string) => Promise<void>;
 }) {
-  const selectedVersion = versions.find((v) => v.status === "APPROVED") ?? versions.at(-1);
+  const defaultVersion = versions.find((v) => v.status === "APPROVED") ?? versions.at(-1);
+  const [selectedVersionId, setSelectedVersionId] = useState<string | undefined>(defaultVersion?.id);
+  const selectedVersion = versions.find((v) => v.id === selectedVersionId) ?? defaultVersion;
 
-  // Auto-generate default visual prompt if prompt is not explicitly set
   const defaultAutoPrompt =
     selectedVersion?.prompt ||
     scene.promptNotes ||
     `Cinematic 24fps shot, ${scene.cameraIntent ?? "measured push-in"}, ${scene.emotion ? scene.emotion.toLowerCase() + " tone," : ""} visual focus on: "${scene.exactText}"`;
 
   const [prompt, setPrompt] = useState(defaultAutoPrompt);
-  const [negativePrompt, setNegativePrompt] = useState(selectedVersion?.negativePrompt ?? scene.negativePrompt ?? "blurry, text, artifacts, low resolution, audio instructions");
   const uploadRef = useRef<HTMLInputElement>(null);
   const [duration, setDuration] = useState<number | null>(scene.videoDurationSeconds);
+  const [aspectRatio, setAspectRatio] = useState<AspectRatio>("9:16");
 
   const isApproved = selectedVersion?.status === "APPROVED";
 
@@ -172,7 +170,7 @@ function StudioCanvas({
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt, provider: "mock", model, durationSeconds: duration }),
+        body: JSON.stringify({ prompt, provider: "mock", model, durationSeconds: duration, aspectRatio }),
       },
       scene.id
     );
@@ -195,7 +193,7 @@ function StudioCanvas({
   return (
     <article className={`higgsfield-studio ${isApproved ? "is-approved" : ""}`}>
       <div className="shot-review-grid">
-        {/* Left Panel: Video Canvas & Preview */}
+        {/* Left Column: 9:16 Video Player */}
         <div className="canvas-preview-column">
           <div className="video-preview-frame">
             {selectedVersion?.videoPath ? (
@@ -204,79 +202,121 @@ function StudioCanvas({
               <div className="canvas-placeholder">
                 <span className="placeholder-icon">🎬</span>
                 <strong>Scene {String(scene.sceneNumber).padStart(2, "0")} Canvas</strong>
-                <p>Generate a silent shot when the approved voice is ready.</p>
+                <p>Generate a silent shot for review.</p>
               </div>
             )}
           </div>
 
-          <div className="scene-narration-banner" style={{ marginTop: 12, padding: "10px 14px", background: "var(--surface-muted)", borderRadius: 8 }}>
-            <span className="field-label">Exact Narration Context</span>
-            <p style={{ margin: 0, fontSize: 13, color: "var(--text-primary)" }}>&ldquo;{scene.exactText}&rdquo;</p>
-          </div>
-
-          {/* Version History Chips */}
-          {versions.length > 0 && (
-            <div className="version-chips-row" style={{ marginTop: 12 }}>
-              <span className="field-label" style={{ display: "inline-block", marginRight: 8 }}>Versions:</span>
-              {versions.map((v) => (
-                <span
-                  key={v.id}
-                  className={`version-chip ${v.id === selectedVersion?.id ? "active" : ""}`}
-                  onClick={() => setPrompt(v.prompt ?? defaultAutoPrompt)}
-                >
-                  v{v.versionNumber} · {videoModelLabel(v.model)} ({label[v.status]})
-                </span>
-              ))}
-            </div>
-          )}
+          <p className="scene-script-quote">&ldquo;{scene.exactText}&rdquo;</p>
         </div>
 
-        {/* Right Panel: AI Studio Controls */}
+        {/* Right Column: Clean Studio Controls */}
         <div className="studio-controls-column">
-          <div className="controls-header">
-            <h3>Scene {String(scene.sceneNumber).padStart(2, "0")} Studio Controls</h3>
-            <span className={`status-badge status-${selectedVersion ? selectedVersion.status.toLowerCase() : "pending"}`}>
-              {selectedVersion ? label[selectedVersion.status] : "Pending"}
-            </span>
+          <div className="studio-settings-grid">
+            <VideoModelSelect value={model} onChange={setModel} disabled={working} />
+            <AspectRatioSelect value={aspectRatio} onChange={setAspectRatio} disabled={working} />
+            <VideoDurationSlider value={duration} onChange={(value) => void updateDuration(value)} disabled={working} />
           </div>
 
-          <section className="generation-settings"><div><p className="eyebrow">Generation Settings</p><h3>Generation Settings</h3></div><div className="studio-settings-grid"><VideoModelSelect value={model} onChange={setModel} disabled={working} /><VideoDurationSlider value={duration} onChange={(value) => void updateDuration(value)} disabled={working} /></div><SceneReferenceSelector sceneId={scene.id} projectId={projectId} references={references} selectedReferenceIds={scene.selectedReferenceIds} disabled={working} onError={onError} /></section>
+          <SceneReferenceSelector sceneId={scene.id} projectId={projectId} references={references} selectedReferenceIds={scene.selectedReferenceIds} disabled={working} onError={onError} />
 
-          {/* Visual Prompt Editor (Auto-generated default, editable by user) */}
+          {/* Interactive Generations Switcher */}
+          {versions.length > 0 && (
+            <div className="generations-switcher-panel">
+              <span className="field-label">Generations History</span>
+              <div className="generations-cards-row">
+                {versions.map((v) => {
+                  const active = v.id === selectedVersion?.id;
+                  const isVerApproved = v.status === "APPROVED";
+                  return (
+                    <button
+                      type="button"
+                      key={v.id}
+                      className={`generation-card-btn ${active ? "is-active" : ""} ${isVerApproved ? "is-approved" : ""}`}
+                      onClick={() => {
+                        setSelectedVersionId(v.id);
+                        setPrompt(v.prompt ?? defaultAutoPrompt);
+                      }}
+                    >
+                      <span className="ver-num">v{v.versionNumber}</span>
+                      <span className={`ver-status-badge status-${v.status.toLowerCase()}`}>
+                        {isVerApproved ? "✓ Approved" : label[v.status]}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           <label className="studio-field">
-            Visual Prompt — No Audio
-            <small style={{ display: "block", marginBottom: 4 }}>Visual instructions for camera motion and composition only.</small>
+            <div className="studio-field-header">
+              <span>Visual Prompt</span>
+              <small className="char-count">{prompt.length} / 3999</small>
+            </div>
             <textarea
               value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
+              onChange={(e) => setPrompt(e.target.value.slice(0, 3999))}
+              maxLength={3999}
               rows={3}
               disabled={working}
+              className="fixed-prompt-textarea"
               placeholder="Describe camera movement, lighting, subject action..."
             />
           </label>
 
-          {/* Negative Prompt */}
-          <label className="studio-field">
-            Negative Constraints
-            <textarea
-              value={negativePrompt}
-              onChange={(e) => setNegativePrompt(e.target.value)}
-              rows={1}
-              disabled={working}
-              placeholder="blurry, text, artifacts, low resolution..."
-            />
-          </label>
-
-          {/* Action Toolbar */}
+          {/* Action Bar (Generate on Left, Upload & Approve on Right) */}
           <div className="studio-actions-toolbar">
             <button onClick={generate} disabled={working} className={working ? "is-working" : ""}>
-              {working ? <span className="spinner" /> : null}
-              {working ? "Generating Silent Shot…" : selectedVersion ? "Regenerate" : "Generate Silent Shot"}
+              {working ? "Generating…" : selectedVersion ? "Regenerate" : "Generate Shot"}
             </button>
 
-            <button className="secondary" onClick={() => uploadRef.current?.click()} disabled={working}>
-              Upload Replacement
-            </button>
+            <div className="right-action-group">
+              <button type="button" className="secondary" onClick={() => uploadRef.current?.click()} disabled={working}>
+                Upload Video
+              </button>
+
+              {selectedVersion && (
+                <>
+                  <button
+                    className="button-success-solid"
+                    onClick={() => onAction(`/api/scene-versions/${selectedVersion.id}/approve`, { method: "POST" }, selectedVersion.id)}
+                    disabled={working || isApproved}
+                  >
+                    {isApproved ? "✓ Approved" : "Approve Shot"}
+                  </button>
+                  {selectedVersion.status === "REJECTED" ? (
+                    <button
+                      className="secondary"
+                      onClick={() =>
+                        onAction(
+                          `/api/scene-versions/${selectedVersion.id}/approve`,
+                          { method: "POST" },
+                          selectedVersion.id
+                        )
+                      }
+                      disabled={working}
+                    >
+                      Un-reject
+                    </button>
+                  ) : (
+                    <button
+                      className="danger"
+                      onClick={() =>
+                        onAction(
+                          `/api/scene-versions/${selectedVersion.id}/reject`,
+                          { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) },
+                          selectedVersion.id
+                        )
+                      }
+                      disabled={working || isApproved}
+                    >
+                      Reject
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
 
             <input
               className="visually-hidden"
@@ -285,31 +325,6 @@ function StudioCanvas({
               accept="video/mp4,.mp4"
               onChange={(e) => void submitVideoUpload(e.target.files?.[0])}
             />
-
-            {selectedVersion && selectedVersion.status === "READY" && (
-              <>
-                <button
-                  className="secondary"
-                  onClick={() => onAction(`/api/scene-versions/${selectedVersion.id}/approve`, { method: "POST" }, selectedVersion.id)}
-                  disabled={working}
-                >
-                  ✓ Approve Clip
-                </button>
-                <button
-                  className="danger"
-                  onClick={() =>
-                    onAction(
-                      `/api/scene-versions/${selectedVersion.id}/reject`,
-                      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) },
-                      selectedVersion.id
-                    )
-                  }
-                  disabled={working}
-                >
-                  Reject
-                </button>
-              </>
-            )}
           </div>
         </div>
       </div>

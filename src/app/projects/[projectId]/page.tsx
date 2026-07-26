@@ -40,9 +40,7 @@ export default async function ProjectWorkspace({ params }: { params: Promise<{ p
               title={project.title}
               genre={project.genre}
               language={project.languageCode}
-              progress={overallProgress(milestones)}
               stage={displayProjectStatus(project.status)}
-              action={nextRecommendedAction(ux)}
             />
           }
           stages={[
