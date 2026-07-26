@@ -59,7 +59,48 @@ export const NOVA_SCENES: PlannedScene[] = [
     mood: "Defiant, somber",
     cameraIntent: "Slow push-in on eyes",
     estimatedDurationSeconds: 17,
-    promptNotes: "Cinematic vertical shot of Nova awakening in Kaveri's body, slow push-in, rich dramatic lighting.",
+    promptNotes: `Use as the strict character and visual reference.
+
+Create the second connected 15-second segment of the same fast-paced cinematic Indian fantasy-action trailer in 16:9. Continue directly from Clip 1. Preserve the exact facial identity, age, skin tone, hair, scars and facial proportions of Nova and Kaveri.
+
+Nova/Kaveri is now one character:
+Her physical body has Kaveri’s injured face and scars from the left side, but her expressions, confidence, red glowing eyes and warrior energy reflect Nova from the right side.
+
+No spoken dialogue. Visuals only. The supplied Hindi voice-over will be added separately.
+
+SHOT STRUCTURE:
+
+[00.0–01.5s]
+Begin from the same extreme close-up of the glowing red eye used at the end of Clip 1. The camera rapidly pulls backwards to reveal Nova/Kaveri standing before the shattered mirror in the royal chamber, now calm, fearless and determined.
+
+[01.5–04.0s]
+Fast preparation montage: she wraps cloth around her wounded hand, secretly draws a sword from beneath a royal bed, and places a family pendant around her neck. Three precise close-up shots cut to the rhythm, metallic sound-design feeling, intense red highlights.
+
+[04.0–06.5s]
+Nova/Kaveri enters a grand royal family hall. Her family members stare at her with suspicion and emotional distance. She pauses at the doorway, vulnerable for one moment, then walks forward with controlled strength. Fast dolly-in followed by a brief emotional close-up.
+
+[06.5–09.0s]
+Action burst: masked attackers invade the palace. Nova/Kaveri performs one elegant spinning sword defence, blocks an attack and sends one enemy backwards. Dynamic side-tracking camera, realistic Indian martial choreography, readable movement, no excessive acrobatics.
+
+[09.0–11.5s]
+Maya watches secretly from behind a palace curtain, shocked that Kaveri is alive. Nova/Kaveri slowly turns toward her from across the hall. Their eyes meet. Rapid alternating close-ups, intense revenge tension, Maya subtly steps backwards.
+
+[11.5–13.5s]
+Unexpected emotional turn: a young family member gently holds Nova/Kaveri’s wounded hand. Her red eyes soften and return briefly to their natural colour. Warm golden light enters the dark palace, suggesting she may begin caring for Kaveri’s family.
+
+[13.5–15.0s]
+Hero shot: Nova/Kaveri stands on a palace terrace holding her sword, red magical energy forming a circular aura behind her, matching the composition and colour language. Wind moves her hair and costume. Camera rapidly cranes upward.
+
+During the final 0.8 seconds, reveal the title:
+“NUMBER ONE NOVA”
+Large bold metallic golden-yellow cinematic lettering, centred, clean and legible, emerging through sparks.
+Do not generate any platform logo or “5M+ Plays” graphic.
+
+VISUAL STYLE:
+Photorealistic live-action Indian fantasy revenge drama, premium OTT trailer, royal Indian palace, crimson and gold colour palette, dramatic volumetric lighting, realistic skin and scars, detailed embroidered costumes, controlled motion blur, cinematic contrast, anamorphic highlights, powerful trailer rhythm.
+
+NEGATIVE CONSTRAINTS:
+Do not alter the reference face. No inconsistent scars, no changing hairstyle, no character duplication, no extra limbs or fingers, no distorted sword, no floating jewellery, no western medieval castle, no cartoon style, no lip-sync, no subtitles except the final English title, no random text, no platform logo, no poster border, no face flicker, no shaky camera.`,
     intensity: 8,
     pace: "Fast",
     energy: "High",
