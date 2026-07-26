@@ -117,3 +117,94 @@ export function seedNovaProject(repo: any, projectId: string) {
     durationMs: 36875
   });
 }
+
+export function isDramaProject(genre?: string | null, title?: string | null, synopsis?: string | null): boolean {
+  const g = (genre || "").toLowerCase();
+  const combined = ((title || "") + " " + (synopsis || "")).toLowerCase();
+  return g.includes("drama") || combined.includes("beghar");
+}
+
+export const DRAMA_AUDIO_PATH = "projects/95c01792-e8cb-45b4-92b7-e9beb0290492/audio/scene-01-v1.wav";
+export const DRAMA_VIDEO_PATH = "projects/95c01792-e8cb-45b4-92b7-e9beb0290492/videos/scene-01-v2-original.mp4";
+export const DRAMA_RENDER_PATH = "projects/95c01792-e8cb-45b4-92b7-e9beb0290492/renders/final-v4.mp4";
+
+export const DRAMA_PRODUCTION_BIBLE: ProductionBible = {
+  premise: { text: "Ek adhuri kahani", groundedness: "FROM_SYNOPSIS" },
+  hook: { text: "A cinematic entry into Beghar Billionare.", groundedness: "AI_INFERRED" },
+  conflict: { text: "The central choice and its consequences described in the synopsis.", groundedness: "FROM_SYNOPSIS" },
+  tone: { text: "Drama with restrained cinematic tension.", groundedness: "AI_INFERRED" },
+  mood: { text: "Tense, intimate, and anticipatory.", groundedness: "AI_INFERRED" },
+  visualStyle: { text: "Grounded cinematic realism, controlled contrast, and deliberate framing.", groundedness: "AI_INFERRED" },
+  characters: [{ name: "Ek", description: { text: "The protagonist facing an incomplete story.", groundedness: "AI_INFERRED" } }],
+  environments: [{ name: "Primary story setting", description: { text: "Grounded Indian urban landscape.", groundedness: "AI_INFERRED" } }],
+  themes: [{ text: "Choice under pressure.", groundedness: "AI_INFERRED" }],
+  trailerDurationSeconds: 25,
+  sceneCount: 1
+};
+
+export const DRAMA_VOICE_BIBLE: VoiceBible = {
+  narratorPersona: "An intimate, observant story guide",
+  voiceStyle: "Natural cinematic narration",
+  tone: "Controlled and emotionally precise",
+  baselinePace: "Measured",
+  baselineEmotion: "Restrained tension",
+  pronunciationNotes: "Use clear pronunciation for Hindi text.",
+  languageCode: "Hindi",
+  ttsProvider: "google",
+  providerVoice: "hi-IN-Wavenet-D",
+  accent: "Indian Hindi",
+  timbre: "Warm, close-miked, and grounded",
+  baselineStylePrompt: "Keep the performance human, intimate, and consistent across every scene."
+};
+
+export const DRAMA_SCENES: PlannedScene[] = [
+  {
+    sceneNumber: 1,
+    exactText: "Ek adhuri kahani",
+    emotion: "Urgency",
+    mood: "Tense, intimate",
+    cameraIntent: "Deliberate framing push-in",
+    estimatedDurationSeconds: 15,
+    promptNotes: "Use the approved visual style and keep the action focused on one readable story beat.",
+    intensity: 8,
+    pace: "Measured",
+    energy: "High",
+    endingStyle: "Cliffhanger",
+    deliveryPrompt: "Natural cinematic narration with restrained tension"
+  }
+];
+
+export function seedDramaProject(repo: any, projectId: string) {
+  repo.replacePlanning(projectId, DRAMA_PRODUCTION_BIBLE, DRAMA_VOICE_BIBLE, DRAMA_SCENES);
+  const scenes = repo.listScenes(projectId);
+  for (const scene of scenes) {
+    repo.createAudioVersion({
+      sceneId: scene.id,
+      provider: "google",
+      model: "fixture-wav",
+      audioPath: DRAMA_AUDIO_PATH,
+      durationMs: 1200,
+    });
+    repo.approveTts(scene.id);
+
+    const version = repo.createSceneVersion({
+      sceneId: scene.id,
+      provider: "mock",
+      model: "seedance-2-fast",
+      prompt: scene.promptNotes,
+      negativePrompt: "",
+      providerJobId: `drama-mock-${Date.now()}`
+    });
+    const databaseVersion = repo.updateSceneVersion(version.id, { status: "APPROVED", videoPath: DRAMA_VIDEO_PATH, durationMs: 2400 });
+    if (databaseVersion) repo.approveSceneVersion(databaseVersion.id);
+  }
+
+  const render = repo.createRenderVersion(projectId, null);
+  repo.updateRenderVersion(render.id, {
+    status: "COMPLETE",
+    currentStage: 8,
+    completedAt: new Date().toISOString(),
+    outputPath: DRAMA_RENDER_PATH,
+    durationMs: 4200
+  });
+}

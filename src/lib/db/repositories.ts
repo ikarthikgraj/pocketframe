@@ -3,7 +3,7 @@ import Database from "better-sqlite3";
 import type { CreateProjectInput, PlannedScene, ProductionBible, ProjectReferenceType, ProjectStatus, SceneStatus, UpdateProjectInput, VersionStatus, VoiceBible } from "@/lib/domain/contracts";
 import { normalizeVideoDuration } from "@/lib/video/duration";
 import { narrationScriptHash } from "@/lib/narration";
-import { isNovaProject, seedNovaProject } from "@/lib/nova";
+import { isNovaProject, seedNovaProject, isDramaProject, seedDramaProject } from "@/lib/nova";
 
 type ProjectRow = {
   id: string; title: string; synopsis: string; genre: string; language_code: string;
@@ -53,6 +53,8 @@ export function createRepositories(database: Database.Database) {
         VALUES (@id, @title, @synopsis, @genre, @languageCode, @status, @createdAt, @updatedAt)`).run(project);
       if (isNovaProject(input.title, input.synopsis)) {
         seedNovaProject(this, project.id);
+      } else if (isDramaProject(input.genre, input.title, input.synopsis)) {
+        seedDramaProject(this, project.id);
       }
       return this.getProject(project.id)!;
     },
