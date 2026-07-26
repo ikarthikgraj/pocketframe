@@ -5,7 +5,7 @@ import { analyzeProjectSchema } from "@/lib/domain/contracts";
 import { getStoryPlanner, MockStoryPlanner } from "@/lib/planning/planner";
 import { segmentSynopsis } from "@/lib/synopsis/segment";
 import { SynopsisReconstructionError, validateSynopsisReconstruction } from "@/lib/synopsis/validate";
-import { isNovaProject, NOVA_SCRIPT_DELAY_MS, NOVA_PRODUCTION_BIBLE, NOVA_VOICE_BIBLE, NOVA_SCENES } from "@/lib/nova";
+import { isNovaProject, isDramaProject, NOVA_SCRIPT_DELAY_MS, NOVA_PRODUCTION_BIBLE, NOVA_VOICE_BIBLE, NOVA_SCENES, DRAMA_PRODUCTION_BIBLE, DRAMA_VOICE_BIBLE, DRAMA_SCENES } from "@/lib/nova";
 
 export const runtime = "nodejs";
 type Context = { params: Promise<{ projectId: string }> };
@@ -21,6 +21,11 @@ export async function POST(request: Request, { params }: Context) {
       await new Promise((resolve) => setTimeout(resolve, NOVA_SCRIPT_DELAY_MS));
       const updated = repositories().replacePlanning(projectId, NOVA_PRODUCTION_BIBLE, NOVA_VOICE_BIBLE, NOVA_SCENES);
       return NextResponse.json({ projectId, status: updated?.status, productionBible: NOVA_PRODUCTION_BIBLE, voiceBible: NOVA_VOICE_BIBLE, scenes: repositories().listScenes(projectId) });
+    }
+    if (isDramaProject(project.genre, project.title, project.synopsis)) {
+      await new Promise((resolve) => setTimeout(resolve, NOVA_SCRIPT_DELAY_MS));
+      const updated = repositories().replacePlanning(projectId, DRAMA_PRODUCTION_BIBLE, DRAMA_VOICE_BIBLE, DRAMA_SCENES);
+      return NextResponse.json({ projectId, status: updated?.status, productionBible: DRAMA_PRODUCTION_BIBLE, voiceBible: DRAMA_VOICE_BIBLE, scenes: repositories().listScenes(projectId) });
     }
     const segments = segmentSynopsis(project.synopsis, input.data.maxScenes);
     validateSynopsisReconstruction(project.synopsis, segments);

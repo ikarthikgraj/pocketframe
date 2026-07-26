@@ -6,7 +6,7 @@ import { getConfig } from "@/lib/config";
 import { getVideoProvider } from "@/lib/video";
 import { assertSilentVisualPrompt, composeVisualPromptWithReferences, defaultSilentVisualPrompt, silentVideoNegativePrompt, type SelectedVisualReference } from "@/lib/video/prompt";
 import { automaticVideoDuration, normalizeVideoDuration, supportedVideoDurations } from "@/lib/video/duration";
-import { isNovaProject, NOVA_SCENE_DELAY_MS, NOVA_SCENE_1_VIDEO, NOVA_SCENE_2_VIDEO } from "@/lib/nova";
+import { isNovaProject, isDramaProject, NOVA_SCENE_DELAY_MS, NOVA_SCENE_1_VIDEO, NOVA_SCENE_2_VIDEO, DRAMA_SCENE_1_VIDEO, DRAMA_SCENE_2_VIDEO } from "@/lib/nova";
 
 export const runtime = "nodejs";
 type Context = { params: Promise<{ sceneId: string }> };
@@ -36,6 +36,15 @@ export async function POST(request: Request, { params }: Context) {
     await new Promise((resolve) => setTimeout(resolve, NOVA_SCENE_DELAY_MS));
     relativePath = scene.sceneNumber === 1 ? NOVA_SCENE_1_VIDEO : NOVA_SCENE_2_VIDEO;
     const version = repo.createSceneVersion({ sceneId: scene.id, provider: input.data.provider, model: input.data.model, prompt: visualPrompt, negativePrompt: silentVideoNegativePrompt, providerJobId: `nova-mock-${Date.now()}` });
+    const databaseVersion = repo.updateSceneVersion(version.id, { status: "APPROVED", videoPath: relativePath, durationMs: sourceDurationSeconds * 1000 })!;
+    repo.approveSceneVersion(databaseVersion.id);
+    return NextResponse.json({ version: databaseVersion, sourceContext: { exactNarrationText: persistedScene.exactText }, scenePrompt: { subject: project.productionBible?.characters ?? [], action: persistedScene.promptNotes, environment: project.productionBible?.environments ?? [], lighting: project.productionBible?.visualStyle.text, cameraMovement: persistedScene.cameraIntent, visualMood: persistedScene.mood, duration: sourceDurationSeconds * 1_000, aspectRatio: "9:16", visualPrompt, selectedReferences, negativeVisualConstraints: silentVideoNegativePrompt, providerStatus: "READY" } }, { status: 201 });
+  }
+
+  if (isDramaProject(project.genre, project.title, project.synopsis)) {
+    await new Promise((resolve) => setTimeout(resolve, NOVA_SCENE_DELAY_MS));
+    relativePath = scene.sceneNumber === 1 ? DRAMA_SCENE_1_VIDEO : DRAMA_SCENE_2_VIDEO;
+    const version = repo.createSceneVersion({ sceneId: scene.id, provider: input.data.provider, model: input.data.model, prompt: visualPrompt, negativePrompt: silentVideoNegativePrompt, providerJobId: `drama-mock-${Date.now()}` });
     const databaseVersion = repo.updateSceneVersion(version.id, { status: "APPROVED", videoPath: relativePath, durationMs: sourceDurationSeconds * 1000 })!;
     repo.approveSceneVersion(databaseVersion.id);
     return NextResponse.json({ version: databaseVersion, sourceContext: { exactNarrationText: persistedScene.exactText }, scenePrompt: { subject: project.productionBible?.characters ?? [], action: persistedScene.promptNotes, environment: project.productionBible?.environments ?? [], lighting: project.productionBible?.visualStyle.text, cameraMovement: persistedScene.cameraIntent, visualMood: persistedScene.mood, duration: sourceDurationSeconds * 1_000, aspectRatio: "9:16", visualPrompt, selectedReferences, negativeVisualConstraints: silentVideoNegativePrompt, providerStatus: "READY" } }, { status: 201 });
