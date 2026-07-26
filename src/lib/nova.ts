@@ -120,7 +120,7 @@ export function seedNovaProject(repo: any, projectId: string) {
 
 export function isDramaProject(genre?: string | null, title?: string | null, synopsis?: string | null): boolean {
   const combined = ((title || "") + " " + (synopsis || "")).toLowerCase();
-  return combined.includes("beghar") || combined.includes("billionare") || combined.includes("ek adhuri");
+  return combined.includes("beghar") || combined.includes("billionare") || combined.includes("ek adhuri") || combined.includes("abhinav") || combined.includes("randhir") || combined.includes("ishita");
 }
 
 export const DRAMA_AUDIO_PATH = "projects/95c01792-e8cb-45b4-92b7-e9beb0290492/audio/aud2nd.wav";
