@@ -54,7 +54,7 @@ export const NOVA_VOICE_BIBLE: VoiceBible = {
 export const NOVA_SCENES: PlannedScene[] = [
   {
     sceneNumber: 1,
-    exactText: "As a punishment, Nova is forced to live as Kaveri.",
+    exactText: "एक दूसरी दुनिया की सबसे शक्तिशाली योद्धा... नोवा। लेकिन अब वह कैद है... मरती हुई राजकुमारी कावेरी के शरीर में। माया के धोखे ने कावेरी से उसका चेहरा, उसका परिवार... और उसकी पहचान छीन ली।",
     emotion: "Determination",
     mood: "Defiant, somber",
     cameraIntent: "Slow push-in on eyes",
@@ -68,7 +68,7 @@ export const NOVA_SCENES: PlannedScene[] = [
   },
   {
     sceneNumber: 2,
-    exactText: "A fierce warrior trapped in a body marked by betrayal.",
+    exactText: "अब नोवा के सामने हैं दो लक्ष्य... कावेरी को न्याय दिलाना... और उसके परिवार में अपनी जगह बनाना। क्या नोवा अपना बदला पूरा कर पाएगी? या उसकी यह नई ज़िंदगी... एक अनजान मोड़ लेगी? देखिए... नंबर वन नोवा।",
     emotion: "Revenge",
     mood: "High-energy, theatrical",
     cameraIntent: "Crane upward shot",
