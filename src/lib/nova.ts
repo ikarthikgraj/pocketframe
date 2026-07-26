@@ -114,7 +114,45 @@ Do not alter the reference face. No inconsistent scars, no changing hairstyle, n
     mood: "High-energy, theatrical",
     cameraIntent: "Crane upward shot",
     estimatedDurationSeconds: 17,
-    promptNotes: "Nova/Kaveri standing on palace terrace with crimson aura and metallic sword.",
+    promptNotes: `Use as the strict character and visual reference.
+
+Create a 15-second, fast-paced cinematic Indian fantasy-action trailer in 16:9. Preserve the exact facial identity, age, skin tone, long black hair, facial proportions and overall appearance of both women shown.
+
+Character assignment:
+- Nova is the confident woman from the right side, with intense red glowing eyes, sharp features and a powerful warrior presence.
+- Kaveri is the injured woman from the left side, with the same visible scars and wounds shown in the poster.
+- Maya is a mysterious elegant Indian woman with a deceptive, sister-like presence. Do not make Maya resemble Nova or Kaveri.
+
+No spoken dialogue. Visuals only. The supplied Hindi voice-over will be added separately.
+
+SHOT STRUCTURE:
+
+[00.0–02.5s]
+Extreme close-up of Nova’s red glowing eye opening suddenly in complete darkness. Her eye reflects a violent battlefield from another world. Rapid push-in camera, drifting embers, deep red rim light, powerful supernatural energy.
+
+[02.5–05.0s]
+Wide cinematic shot of Nova in her original warrior form standing alone on a ruined alien battlefield, holding a sword, wind violently moving her hair and costume. She strikes a powerful battle-ready pose as enemies rush toward her through smoke. Fast low-angle tracking shot, dramatic lightning, epic scale.
+
+[05.0–07.5s]
+A blinding magical shockwave hits Nova. Her body turns into glowing red particles and is pulled through a circular portal. Fast spinning camera transition through the portal, strong motion blur only during the transition.
+
+[07.5–10.5s]
+Match cut into Kaveri lying unconscious and dying on the floor of a dark royal chamber. Preserve the injured face and scars. Nova’s red supernatural energy enters Kaveri’s body. Kaveri gasps and opens glowing red eyes. Quick overhead shot transitioning into a close-up.
+
+[10.5–13.0s]
+Flashback montage: Maya embraces Kaveri lovingly, then her expression turns cold. A hand pushes Kaveri from a palace balcony. A torn family portrait falls in slow motion. Three rapid shots, sharp impact cuts, betrayal atmosphere.
+
+[13.0–15.0s]
+Close-up of injured Kaveri standing before a cracked mirror. Her damaged reflection briefly transforms into the confident Nova from the right side. Nova’s red eyes glow inside the reflection. Slow dramatic push-in, end on her intense eye for seamless continuation into Clip 2.
+
+VISUAL STYLE:
+Photorealistic live-action Indian fantasy drama, premium streaming-series trailer, royal palace environments, dramatic contrast, crimson and gold lighting, volumetric smoke, flying embers, realistic skin texture, detailed fabrics, cinematic depth of field, anamorphic lens flares, sharp subject focus, high-energy editing.
+
+CONTINUITY:
+The final frame must be a tight close-up of Nova/Kaveri’s glowing red eye, centred in frame, so Clip 2 can begin from the same composition.
+
+NEGATIVE CONSTRAINTS:
+Do not alter the reference faces. No face swapping between characters, no extra women, no duplicate characters, no changing scars, no western facial features, no cartoon or anime style, no deformed hands, no extra fingers, no floating weapons, no lip-sync, no subtitles, no logos, no title text, no poster layout, no camera jitter, no flickering faces.`,
     intensity: 9,
     pace: "Fast",
     energy: "High",
