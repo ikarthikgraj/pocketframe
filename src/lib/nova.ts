@@ -119,9 +119,8 @@ export function seedNovaProject(repo: any, projectId: string) {
 }
 
 export function isDramaProject(genre?: string | null, title?: string | null, synopsis?: string | null): boolean {
-  const g = (genre || "").toLowerCase();
   const combined = ((title || "") + " " + (synopsis || "")).toLowerCase();
-  return g.includes("drama") || combined.includes("beghar");
+  return combined.includes("beghar") || combined.includes("billionare") || combined.includes("ek adhuri");
 }
 
 export const DRAMA_AUDIO_PATH = "projects/95c01792-e8cb-45b4-92b7-e9beb0290492/audio/scene-01-v1.wav";
