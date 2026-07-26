@@ -123,9 +123,10 @@ export function isDramaProject(genre?: string | null, title?: string | null, syn
   return combined.includes("beghar") || combined.includes("billionare") || combined.includes("ek adhuri");
 }
 
-export const DRAMA_AUDIO_PATH = "projects/95c01792-e8cb-45b4-92b7-e9beb0290492/audio/scene-01-v1.wav";
-export const DRAMA_VIDEO_PATH = "projects/95c01792-e8cb-45b4-92b7-e9beb0290492/videos/scene-01-v2-original.mp4";
-export const DRAMA_RENDER_PATH = "projects/95c01792-e8cb-45b4-92b7-e9beb0290492/renders/final-v4.mp4";
+export const DRAMA_AUDIO_PATH = "projects/95c01792-e8cb-45b4-92b7-e9beb0290492/audio/aud2nd.wav";
+export const DRAMA_SCENE_1_VIDEO = "projects/95c01792-e8cb-45b4-92b7-e9beb0290492/videos/2nd01.mp4";
+export const DRAMA_SCENE_2_VIDEO = "projects/95c01792-e8cb-45b4-92b7-e9beb0290492/videos/2nd02.mp4";
+export const DRAMA_RENDER_PATH = "projects/95c01792-e8cb-45b4-92b7-e9beb0290492/renders/final-v5.mp4";
 
 export const DRAMA_PRODUCTION_BIBLE: ProductionBible = {
   premise: { text: "Ek adhuri kahani", groundedness: "FROM_SYNOPSIS" },
@@ -137,8 +138,8 @@ export const DRAMA_PRODUCTION_BIBLE: ProductionBible = {
   characters: [{ name: "Ek", description: { text: "The protagonist facing an incomplete story.", groundedness: "AI_INFERRED" } }],
   environments: [{ name: "Primary story setting", description: { text: "Grounded Indian urban landscape.", groundedness: "AI_INFERRED" } }],
   themes: [{ text: "Choice under pressure.", groundedness: "AI_INFERRED" }],
-  trailerDurationSeconds: 25,
-  sceneCount: 1
+  trailerDurationSeconds: 35,
+  sceneCount: 2
 };
 
 export const DRAMA_VOICE_BIBLE: VoiceBible = {
@@ -159,16 +160,30 @@ export const DRAMA_VOICE_BIBLE: VoiceBible = {
 export const DRAMA_SCENES: PlannedScene[] = [
   {
     sceneNumber: 1,
-    exactText: "Ek adhuri kahani",
+    exactText: "Ek adhuri kahani - Part 1",
     emotion: "Urgency",
     mood: "Tense, intimate",
     cameraIntent: "Deliberate framing push-in",
-    estimatedDurationSeconds: 15,
+    estimatedDurationSeconds: 17,
     promptNotes: "Use the approved visual style and keep the action focused on one readable story beat.",
     intensity: 8,
     pace: "Measured",
     energy: "High",
     endingStyle: "Cliffhanger",
+    deliveryPrompt: "Natural cinematic narration with restrained tension"
+  },
+  {
+    sceneNumber: 2,
+    exactText: "A story of fortune, loss, and redemption.",
+    emotion: "Determination",
+    mood: "Reflective, dramatic",
+    cameraIntent: "Wide cinematic tracking shot",
+    estimatedDurationSeconds: 17,
+    promptNotes: "Dramatic urban scene with cinematic contrast and high tension.",
+    intensity: 9,
+    pace: "Measured",
+    energy: "High",
+    endingStyle: "Resolved",
     deliveryPrompt: "Natural cinematic narration with restrained tension"
   }
 ];
@@ -182,10 +197,11 @@ export function seedDramaProject(repo: any, projectId: string) {
       provider: "google",
       model: "fixture-wav",
       audioPath: DRAMA_AUDIO_PATH,
-      durationMs: 1200,
+      durationMs: 34680,
     });
     repo.approveTts(scene.id);
 
+    const videoPath = scene.sceneNumber === 1 ? DRAMA_SCENE_1_VIDEO : DRAMA_SCENE_2_VIDEO;
     const version = repo.createSceneVersion({
       sceneId: scene.id,
       provider: "mock",
@@ -194,7 +210,7 @@ export function seedDramaProject(repo: any, projectId: string) {
       negativePrompt: "",
       providerJobId: `drama-mock-${Date.now()}`
     });
-    const databaseVersion = repo.updateSceneVersion(version.id, { status: "APPROVED", videoPath: DRAMA_VIDEO_PATH, durationMs: 2400 });
+    const databaseVersion = repo.updateSceneVersion(version.id, { status: "APPROVED", videoPath, durationMs: 15069 });
     if (databaseVersion) repo.approveSceneVersion(databaseVersion.id);
   }
 
@@ -204,6 +220,6 @@ export function seedDramaProject(repo: any, projectId: string) {
     currentStage: 8,
     completedAt: new Date().toISOString(),
     outputPath: DRAMA_RENDER_PATH,
-    durationMs: 4200
+    durationMs: 37708
   });
 }
