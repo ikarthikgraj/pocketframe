@@ -33,7 +33,7 @@ export function NarrationScriptEditor({
   async function save(next = value) {
     setWorking(true);
     setError(undefined);
-    const response = await fetch(`/api/scenes/${scene.id}/narration`, {
+    const response = await fetch(`/api/scenes/${scene.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ narration: next }),
@@ -208,7 +208,7 @@ function VoiceSceneCard({ scene, versions }: { scene: Scene; versions: AudioVers
 
   async function reviewAction(action: "select" | "approve" | "reject") {
     if (!selected) return;
-    await request(`/api/audio-versions/${selected.id}/review`, {
+    await request(`/api/audio-versions/${selected.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action }),

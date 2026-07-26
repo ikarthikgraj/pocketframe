@@ -43,7 +43,7 @@ export function ShotSceneCards({ projectId, references, scenes, versions }: Prop
     const poll = async () => {
       if (polling.current) return;
       polling.current = true;
-      await Promise.all(active.split(",").filter(Boolean).map((id) => fetch(`/api/scene-versions/${id}/status`)));
+      await Promise.all(active.split(",").filter(Boolean).map((id) => fetch(`/api/scene-versions/${id}`)));
       polling.current = false;
       router.refresh();
     };
@@ -180,13 +180,13 @@ function StudioCanvas({
     const form = new FormData();
     form.set("file", file);
     form.set("prompt", prompt);
-    await onAction(`/api/scenes/${scene.id}/upload`, { method: "POST", body: form }, scene.id);
+    await onAction(`/api/scenes/${scene.id}/video`, { method: "POST", body: form }, scene.id);
     if (uploadRef.current) uploadRef.current.value = "";
   };
 
   async function updateDuration(value: number | null) {
     setDuration(value);
-    const response = await fetch(`/api/scenes/${scene.id}/duration`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ durationSeconds: value }) });
+    const response = await fetch(`/api/scenes/${scene.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ durationSeconds: value }) });
     if (!response.ok) { const data = await response.json().catch(() => ({})); onError(data.error?.message ?? "Could not update video duration."); }
   }
 
@@ -203,7 +203,7 @@ function StudioCanvas({
                 <span className="generating-timer">Processing high-fidelity motion (~1 min)</span>
               </div>
             ) : selectedVersion?.videoPath ? (
-              <video controls muted preload="metadata" src={`/api/scene-versions/${selectedVersion.id}/video`} key={selectedVersion.id} />
+              <video controls muted preload="metadata" src={`/api/scene-versions/${selectedVersion.id}?media=video`} key={selectedVersion.id} />
             ) : (
               <div className="canvas-placeholder">
                 <span className="placeholder-icon">🎬</span>
@@ -286,7 +286,7 @@ function StudioCanvas({
                 <>
                   <button
                     className="button-success-solid"
-                    onClick={() => onAction(`/api/scene-versions/${selectedVersion.id}/approve`, { method: "POST" }, selectedVersion.id)}
+                    onClick={() => onAction(`/api/scene-versions/${selectedVersion.id}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "approve" }) }, selectedVersion.id)}
                     disabled={working || isApproved}
                   >
                     {isApproved ? "✓ Approved" : "Approve Shot"}
@@ -296,8 +296,8 @@ function StudioCanvas({
                       className="secondary"
                       onClick={() =>
                         onAction(
-                          `/api/scene-versions/${selectedVersion.id}/approve`,
-                          { method: "POST" },
+                          `/api/scene-versions/${selectedVersion.id}`,
+                          { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "approve" }) },
                           selectedVersion.id
                         )
                       }

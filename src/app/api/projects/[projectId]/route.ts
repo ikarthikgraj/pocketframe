@@ -25,3 +25,12 @@ export async function DELETE(_: Request, { params }: Context) {
     : NextResponse.json({ error: { code: "NOT_FOUND", message: "Project not found." } }, { status: 404 });
 }
 
+export async function POST(_: Request, { params }: Context) {
+  const repo = repositories();
+  const projectId = (await params).projectId;
+  const project = repo.getProject(projectId);
+  if (!project?.productionBible) return NextResponse.json({ error: { code: "PLANNING_NOT_READY", message: "Generate story planning before approval." } }, { status: 409 });
+  const updated = repo.approveProductionBible(projectId);
+  return updated ? NextResponse.json({ projectId: updated.id, status: updated.status }) : NextResponse.json({ error: { code: "NOT_FOUND", message: "Project not found." } }, { status: 404 });
+}
+

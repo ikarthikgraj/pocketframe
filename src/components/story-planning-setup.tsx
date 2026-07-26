@@ -28,7 +28,7 @@ export function StoryPlanningSetup({ projectId, project, productionBible, scenes
   async function action(path: string) {
     setWorking(true);
     setError(undefined);
-    const response = await fetch(`/api/projects/${projectId}/${path}`, {
+    const response = await fetch(path === "approve-bible" ? `/api/projects/${projectId}` : `/api/projects/${projectId}/${path}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: path === "analyze" ? JSON.stringify({ maxScenes: 4 }) : undefined,

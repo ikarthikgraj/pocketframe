@@ -24,7 +24,7 @@ export function SceneReferenceSelector({
   async function toggle(referenceId: string) {
     const next = selected.includes(referenceId) ? selected.filter((id) => id !== referenceId) : [...selected, referenceId];
     setSelected(next);
-    const response = await fetch(`/api/scenes/${sceneId}/references`, {
+    const response = await fetch(`/api/scenes/${sceneId}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ referenceIds: next }),
@@ -47,7 +47,7 @@ export function SceneReferenceSelector({
               <label key={reference.id} className={`reference-square-card ${isChecked ? "selected" : ""}`} title={reference.displayName}>
                 <input type="checkbox" checked={isChecked} onChange={() => void toggle(reference.id)} className="visually-hidden" />
                 <div className="square-img-wrap">
-                  <Image unoptimized width={54} height={54} src={`/api/projects/${projectId}/references/${reference.id}/image`} alt={reference.displayName} />
+                  <Image unoptimized width={54} height={54} src={`/api/projects/${projectId}/references?referenceId=${reference.id}`} alt={reference.displayName} />
                   {isChecked && <span className="square-check-badge">✓</span>}
                 </div>
               </label>

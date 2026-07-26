@@ -35,10 +35,17 @@ export async function POST(request: Request, { params }: Context) {
     const activeReference = project.references.find((r) => r.active !== false) ?? project.references[0];
     const referenceImagePath = activeReference?.localPath ?? null;
     const result = await stitchTrailer({ projectId, renderVersion: render.versionNumber, title: parsed.data.title ?? project.title, tagline, cta: parsed.data.cta, scenes: approved, subtitles: parsed.data.subtitles, musicPath, referenceImagePath, onStage: async (currentStage) => { repo.updateRenderVersion(render.id, { currentStage }); } });
-    const complete = repo.updateRenderVersion(render.id, { status: "COMPLETE", currentStage: 8, completedAt: new Date().toISOString(), outputPath: result.outputPath, durationMs: result.durationMs });
-    return NextResponse.json({ projectId, render: complete, mockFallback: result.mockFallback }, { status: 201 });
   } catch (error) {
     const failed = repo.updateRenderVersion(render.id, { status: "FAILED", completedAt: new Date().toISOString(), errorMessage: error instanceof Error ? error.message : "Render failed." });
     return NextResponse.json({ error: { code: "RENDER_FAILED", message: failed?.errorMessage ?? "Render failed.", retryable: true }, render: failed }, { status: 500 });
   }
+}
+
+export async function GET(_: Request, { params }: Context) {
+  const projectId = (await params).projectId;
+  const repo = repositories();
+  if (!repo.getProject(projectId)) return NextResponse.json({ error: { code: "NOT_FOUND", message: "Project not found." } }, { status: 404 });
+  const readiness = repo.getRenderReadiness(projectId);
+  const render = repo.getLatestRenderVersion(projectId);
+  return NextResponse.json({ status: render?.status ?? (readiness.ready ? "READY" : "NOT_READY"), readiness, render, finalRenderPath: render?.outputPath ?? null, durationMs: render?.durationMs ?? null });
 }

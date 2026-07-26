@@ -10,6 +10,20 @@ type Context = { params: Promise<{ projectId: string }> };
 const allowedExtensions = new Set([".jpg", ".jpeg", ".png", ".webp"]);
 const allowedTypes = new Set(["image/jpeg", "image/png", "image/webp"]);
 
+export async function GET(request: Request, { params }: Context) {
+  const { projectId } = await params;
+  const { searchParams } = new URL(request.url);
+  const referenceId = searchParams.get("referenceId") || searchParams.get("id");
+  if (!referenceId) return response("VALIDATION_ERROR", "Provide referenceId", 400);
+  const reference = repositories().getProject(projectId)?.references.find((item) => item.id === referenceId && item.active);
+  if (!reference) return new NextResponse("Not found", { status: 404 });
+  try {
+    const bytes = await fs.readFile(path.join(getConfig().dataDirectory, reference.localPath));
+    const extension = path.extname(reference.localPath).toLowerCase();
+    return new NextResponse(bytes, { headers: { "Content-Type": extension === ".png" ? "image/png" : extension === ".webp" ? "image/webp" : "image/jpeg", "Cache-Control": "private, max-age=3600" } });
+  } catch { return new NextResponse("Not found", { status: 404 }); }
+}
+
 export async function POST(request: Request, { params }: Context) {
   const projectId = (await params).projectId;
   const repo = repositories();
