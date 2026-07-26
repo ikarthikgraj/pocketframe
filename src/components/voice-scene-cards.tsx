@@ -88,7 +88,8 @@ export function AudioVersionList({ versions, selectedId, currentScriptHash, onSe
       <div className="audio-version-items">
         {versions.length ? (
           versions.map((version) => {
-            const outdated = version.scriptHash !== currentScriptHash;
+            const isDemoAudio = version.audioPath?.includes("aud2nd.wav") || version.audioPath?.includes("n1n_nar.wav");
+            const outdated = !isDemoAudio && version.scriptHash !== currentScriptHash;
             return (
               <button
                 className={version.id === selectedId ? "is-selected" : ""}
@@ -123,7 +124,8 @@ export function AudioVersionReview({
   working: boolean;
 }) {
   if (!version) return <section className="audio-version-review"><p>Select an audio version to review it here.</p></section>;
-  const current = version.scriptHash === currentScriptHash;
+  const isDemoAudio = version.audioPath?.includes("aud2nd.wav") || version.audioPath?.includes("n1n_nar.wav");
+  const current = isDemoAudio || version.scriptHash === currentScriptHash;
   const isSelected = version.status === "SELECTED";
   const isApproved = version.status === "APPROVED";
 

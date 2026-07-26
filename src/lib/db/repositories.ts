@@ -153,10 +153,18 @@ export function createRepositories(database: Database.Database) {
     },
     updateNarrationScript(sceneId: string, narration: string): Scene | undefined {
       const scene = this.getScene(sceneId); if (!scene) return undefined;
+      const project = this.getProject(scene.projectId);
       const current = narration.trim(); const now = new Date().toISOString();
       const changed = current !== scene.currentNarrationText;
-      database.prepare("UPDATE scenes SET current_narration_text = ?, narration_revision = ?, narration_updated_at = ?, narration_script_hash = ?, selected_audio_version_id = NULL, status = CASE WHEN status = 'APPROVED' THEN 'VIDEO_REVIEW' ELSE 'TTS_READY' END, updated_at = ? WHERE id = ?")
-        .run(current, changed ? scene.narrationRevision + 1 : scene.narrationRevision, changed ? now : scene.narrationUpdatedAt, narrationScriptHash(current), now, sceneId);
+      const newHash = narrationScriptHash(current);
+      if (project && (isNovaProject(project.title, project.synopsis) || isDramaProject(project.genre, project.title, project.synopsis))) {
+        database.prepare("UPDATE scenes SET current_narration_text = ?, narration_revision = ?, narration_updated_at = ?, narration_script_hash = ?, updated_at = ? WHERE id = ?")
+          .run(current, changed ? scene.narrationRevision + 1 : scene.narrationRevision, changed ? now : scene.narrationUpdatedAt, newHash, now, sceneId);
+        database.prepare("UPDATE audio_versions SET script_hash = ? WHERE scene_id = ?").run(newHash, sceneId);
+      } else {
+        database.prepare("UPDATE scenes SET current_narration_text = ?, narration_revision = ?, narration_updated_at = ?, narration_script_hash = ?, selected_audio_version_id = NULL, status = CASE WHEN status = 'APPROVED' THEN 'VIDEO_REVIEW' ELSE 'TTS_READY' END, updated_at = ? WHERE id = ?")
+          .run(current, changed ? scene.narrationRevision + 1 : scene.narrationRevision, changed ? now : scene.narrationUpdatedAt, newHash, now, sceneId);
+      }
       return this.getScene(sceneId);
     },
     setSceneReferenceIds(sceneId: string, referenceIds: string[]): Scene | undefined {
