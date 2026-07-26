@@ -239,7 +239,7 @@ export const DRAMA_VOICE_BIBLE: VoiceBible = {
 export const DRAMA_SCENES: PlannedScene[] = [
   {
     sceneNumber: 1,
-    exactText: "Ek adhuri kahani - Part 1",
+    exactText: "Abhinav, a simple sales executive trapped in a humiliating marriage, silently suffers taunts from his mother-in-law and struggles to fund his ailing mother’s treatment. Just when life seems hopeless, he discovers a shocking truth—his biological father, Randhir Raichand, a powerful billionaire, has mysteriously disappeared.",
     emotion: "Urgency",
     mood: "Tense, intimate",
     cameraIntent: "Deliberate framing push-in",
@@ -291,7 +291,7 @@ No subtitles, no lip-sync, no random text, no extra characters dominating the fr
   },
   {
     sceneNumber: 2,
-    exactText: "A story of fortune, loss, and redemption.",
+    exactText: "As Abhinav reluctantly steps into this hidden legacy, he faces betrayals, conspiracies, and a dangerous invention that many are willing to kill for. Meanwhile, his wife Ishita begins doubting him, while Abhinav secretly uses his newfound power to protect her.",
     emotion: "Determination",
     mood: "Reflective, dramatic",
     cameraIntent: "Wide cinematic tracking shot",
